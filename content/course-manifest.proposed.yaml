@@ -1,0 +1,19 @@
+course:
+  id: talk-to-ai
+  title: "TALK TO AI — From Introduction to Mastery"
+  manifest_status: proposed
+  status_values: [proposed, draft, review, verified, published, deprecated]
+  languages: [en, dar]
+  access:
+    free: true
+    downloadable: true
+  last_verified: "2026-10-26"
+  stage_order:
+    - "01 Understand AI"
+    - "02 Communicate with AI"
+    - "03 Question, improve & verify"
+    - "04 Tools, plugins & multimodal AI"
+    - "05 Practical work & business"
+    - "06 Advertising campaigns"
+    - "07 Automation, assistants & agents"
+  note: "Detailed 24-lesson + 6-workshop structure is proposed and must not be treated as recovered live source until production source inventory is complete."

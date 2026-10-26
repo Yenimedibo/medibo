@@ -1,0 +1,2 @@
+claim_id,claim_text,claim_type,source_url,source_name,verified_on,review_by,status,notes
+CLM-001,"Example: ChatGPT uses the term plugins for packaged workflows that may include connected apps and skills.",product-terminology,"https://help.openai.com/en/articles/20001256-plugins-in-chatgpt","OpenAI Help Center",2026-10-26,2027-01-26,verified,"Recheck because product terminology changes."

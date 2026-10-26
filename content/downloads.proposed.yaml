@@ -1,0 +1,13 @@
+downloads:
+  status: proposed
+  note: "Actual live filenames were not export-verifiable on 2026-10-26."
+  build_rule: "Every generated file must declare canonical source paths and build version."
+  proposed_outputs:
+    - {id: en-course-pdf, language: en, filename: talk-to-ai-course-en.pdf}
+    - {id: dar-course-pdf, language: dar, filename: talk-to-ai-course-dar.pdf}
+    - {id: en-workbook-pdf, language: en, filename: talk-to-ai-workbook-en.pdf}
+    - {id: dar-workbook-pdf, language: dar, filename: talk-to-ai-workbook-dar.pdf}
+    - {id: en-prompt-library-pdf, language: en, filename: talk-to-ai-prompt-library-en.pdf}
+    - {id: dar-prompt-library-pdf, language: dar, filename: talk-to-ai-prompt-library-dar.pdf}
+    - {id: en-offline-pack, language: en, filename: talk-to-ai-offline-en.zip}
+    - {id: dar-offline-pack, language: dar, filename: talk-to-ai-offline-dar.zip}

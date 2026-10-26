@@ -1,0 +1,24 @@
+{
+  "project": "medibo",
+  "production_domain": "https://bourkia.com",
+  "current_production_platform": "ChatGPT Sites",
+  "migration_status": "initialized",
+  "principles": [
+    "mobile-first",
+    "fast",
+    "accessible",
+    "free-course",
+    "downloadable",
+    "human-approved-publishing",
+    "portable-source"
+  ],
+  "critical_flows": [
+    "home -> course",
+    "lesson navigation",
+    "copy example",
+    "interactive exercises",
+    "download course",
+    "privacy page",
+    "mobile navigation"
+  ]
+}
