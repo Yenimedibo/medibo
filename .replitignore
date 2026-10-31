@@ -1,0 +1,3 @@
+generated-artifacts/
+node_modules/
+site/preview-shell/dist/

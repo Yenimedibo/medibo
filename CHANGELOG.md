@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-31 — First portable website shell (preview only)
+- VERIFIED — Added a portable React/Vite shell for personal Home, Courses, Reality 101, Workbench entry and unnamed teaser, starting from merged main e16599a.
+- VERIFIED — Kept course/Workbench internals and storage untouched; explicit live-origin entry links and read-only course/download/media path handoffs preserve existing contracts without copying payloads or user records.
+- VERIFIED — Added native episode players using unchanged live media URLs, legacy homepage fragment targets, reduced-motion/focus styles and preview noindex safeguards.
+- VERIFIED — Added standalone install/build/start instructions, locked dependencies and route/download contract unit tests. Validation scope and limits are recorded in migration/first-shell-handoff.md.
+- UNKNOWN — Complete parity, full video playback, download payload integrity and course/Workbench offline independence remain unverified. No production/DNS/visibility/deploy/merge changes.
+
 ## 2026-10-31 — Documentation reconciliation and proposed information architecture
 - VERIFIED — Reconciled repository role to controlled migration source; bourkia.com remains production authority until parity and human approval.
 - VERIFIED — Recorded 7 stages / 24 lessons / 6 labs / EN + Darija and all 45 audit-observed download endpoints, replacing incomplete proposed recovery assumptions; kept availability/integrity/functional evidence separate.
