@@ -1,0 +1,180 @@
+{
+  "classification": "VERIFIED",
+  "source_audit_commit": "a6055e303f28f7754194de2246d68529790ab7f7",
+  "source": "../audit/production-site-inventory.md",
+  "id": "talk-to-ai",
+  "title": "TALK TO AI — From Introduction to Mastery",
+  "stage_count": 7,
+  "foundation_lesson_count": 24,
+  "applied_lab_count": 6,
+  "languages": [
+    "en",
+    "dar"
+  ],
+  "darija_document_language": "ary",
+  "darija_direction": "rtl",
+  "stage_titles_en": [
+    "Understand AI",
+    "Communicate with AI",
+    "Question, improve and verify",
+    "Tools, files and multimodal AI",
+    "Practical work and business",
+    "Advertising campaigns",
+    "Automation, assistants and agents"
+  ],
+  "lessons": [
+    {
+      "id": "01",
+      "stage": 1,
+      "title_en": "What AI is actually doing",
+      "title_dar": "شنو كيدير AI بالضبط؟"
+    },
+    {
+      "id": "02",
+      "stage": 1,
+      "title_en": "Tokens, context and memory",
+      "title_dar": "Tokens، السياق والذاكرة"
+    },
+    {
+      "id": "03",
+      "stage": 1,
+      "title_en": "Your first useful conversation",
+      "title_dar": "أول محادثة مفيدة"
+    },
+    {
+      "id": "04",
+      "stage": 1,
+      "title_en": "Why confident mistakes happen",
+      "title_dar": "علاش AI كيقدر يغلط بثقة؟"
+    },
+    {
+      "id": "05",
+      "stage": 2,
+      "title_en": "The anatomy of a useful prompt",
+      "title_dar": "كيفاش تبني prompt مفيد"
+    },
+    {
+      "id": "06",
+      "stage": 2,
+      "title_en": "Give the right context",
+      "title_dar": "عطي السياق المناسب"
+    },
+    {
+      "id": "07",
+      "stage": 2,
+      "title_en": "Examples, roles and formats",
+      "title_dar": "الأمثلة، الأدوار وشكل الجواب"
+    },
+    {
+      "id": "08",
+      "stage": 2,
+      "title_en": "Iteration beats the perfect prompt",
+      "title_dar": "التعديل أحسن من البحث على prompt مثالي"
+    },
+    {
+      "id": "09",
+      "stage": 3,
+      "title_en": "Fact, opinion and inference",
+      "title_dar": "الحقيقة، الرأي والاستنتاج"
+    },
+    {
+      "id": "10",
+      "stage": 3,
+      "title_en": "Sources and fact-checking",
+      "title_dar": "المصادر والتحقق"
+    },
+    {
+      "id": "11",
+      "stage": 3,
+      "title_en": "Audit a flawed answer",
+      "title_dar": "راجع جواب فيه أخطاء مقصودة"
+    },
+    {
+      "id": "12",
+      "stage": 3,
+      "title_en": "Privacy, consent and accountability",
+      "title_dar": "الخصوصية، الموافقة والمسؤولية"
+    },
+    {
+      "id": "13",
+      "stage": 4,
+      "title_en": "Text, images, audio and video",
+      "title_dar": "النص، الصورة، الصوت والفيديو"
+    },
+    {
+      "id": "14",
+      "stage": 4,
+      "title_en": "Plugins, connectors and permissions",
+      "title_dar": "Plugins، الربط والصلاحيات"
+    },
+    {
+      "id": "15",
+      "stage": 4,
+      "title_en": "Work with documents",
+      "title_dar": "الخدمة بالوثائق"
+    },
+    {
+      "id": "16",
+      "stage": 4,
+      "title_en": "Work with data and spreadsheets",
+      "title_dar": "المعطيات والجداول"
+    },
+    {
+      "id": "17",
+      "stage": 4,
+      "title_en": "Choose a useful toolkit",
+      "title_dar": "اختار الأدوات اللي محتاج"
+    },
+    {
+      "id": "18",
+      "stage": 5,
+      "title_en": "Build a reusable business brief",
+      "title_dar": "وجد business brief تعاود تستعملو"
+    },
+    {
+      "id": "19",
+      "stage": 5,
+      "title_en": "From one source to useful work",
+      "title_dar": "من مصدر واحد لخدمة مفيدة"
+    },
+    {
+      "id": "20",
+      "stage": 6,
+      "title_en": "Design an advertising experiment",
+      "title_dar": "صمم تجربة إشهارية"
+    },
+    {
+      "id": "21",
+      "stage": 6,
+      "title_en": "Measure what happened",
+      "title_dar": "قيس شنو وقع فعلا"
+    },
+    {
+      "id": "22",
+      "stage": 7,
+      "title_en": "Configure a recurring assistant",
+      "title_dar": "وجد مساعد لمهمة كتعاود"
+    },
+    {
+      "id": "23",
+      "stage": 7,
+      "title_en": "Build a controlled workflow",
+      "title_dar": "بني workflow مراقب"
+    },
+    {
+      "id": "24",
+      "stage": 7,
+      "title_en": "Define and supervise an agent",
+      "title_dar": "حدد agent وراقب خدمتو"
+    }
+  ],
+  "lab_route_ids": [
+    "lab-research",
+    "lab-files",
+    "lab-data",
+    "lab-creative",
+    "lab-content",
+    "lab-automation"
+  ],
+  "limit": "Inventory metadata only; original lesson authoring/build sources remain UNKNOWN; no lesson or translation rewritten"
+}

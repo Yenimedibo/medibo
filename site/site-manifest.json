@@ -2,7 +2,7 @@
   "project": "medibo",
   "production_domain": "https://bourkia.com",
   "current_production_platform": "ChatGPT Sites",
-  "migration_status": "initialized",
+  "migration_status": "documentation reconciliation proposed; replacement not built",
   "principles": [
     "mobile-first",
     "fast",
@@ -19,6 +19,55 @@
     "interactive exercises",
     "download course",
     "privacy page",
-    "mobile navigation"
-  ]
+    "mobile navigation",
+    "applied lab editing/copy and local simulator",
+    "Workbench save/export and storage compatibility"
+  ],
+  "repository_role": "controlled migration source; not yet canonical",
+  "production_authority": "https://bourkia.com until parity gate and explicit human approval",
+  "public_recovery": {
+    "classification": "VERIFIED",
+    "owner_authorized": true,
+    "scope": "Public production observations are valid reconstruction evidence; not an original source export"
+  },
+  "observed_course": {
+    "classification": "VERIFIED",
+    "stages": 7,
+    "foundation_lessons": 24,
+    "applied_labs": 6,
+    "languages": [
+      "en",
+      "dar"
+    ],
+    "inventory": "../content/course-inventory.observed.json"
+  },
+  "observed_downloads": {
+    "classification": "VERIFIED",
+    "endpoint_count": 45,
+    "inventory": "../content/downloads.observed.json",
+    "evidence_limit": "HTTP availability only; not integrity or functional validation"
+  },
+  "parity_contracts": "../migration/first-parity-contracts.md",
+  "information_architecture": {
+    "classification": "PROPOSED",
+    "document": "information-architecture.proposed.md",
+    "owner_direction_recorded": true,
+    "implementation_approved": false
+  },
+  "normal_workflow": [
+    "branch",
+    "validation",
+    "pull request",
+    "independent review",
+    "human approval",
+    "merge"
+  ],
+  "platform_provenance": {
+    "classification": "VERIFIED",
+    "basis": "Owner-reported production platform; not independent recovery of original source/build configuration"
+  },
+  "original_source_build_configuration": {
+    "classification": "UNKNOWN",
+    "reason": "No original authoring source, complete source export or build/dependency/deployment configuration recovered"
+  }
 }
