@@ -2,18 +2,13 @@ course:
   id: talk-to-ai
   title: "TALK TO AI — From Introduction to Mastery"
   manifest_status: proposed
-  status_values: [proposed, draft, review, verified, published, deprecated]
+  classification: PROPOSED
+  scope: "Future specification only; observed production structure is recorded separately."
+  observed_inventory: "course-inventory.observed.json"
+  observed_inventory_classification: VERIFIED
+  observed_structure: "7 stages; 24 foundation lessons; 6 applied labs; EN + Darija"
   languages: [en, dar]
   access:
     free: true
     downloadable: true
-  last_verified: "2026-10-26"
-  stage_order:
-    - "01 Understand AI"
-    - "02 Communicate with AI"
-    - "03 Question, improve & verify"
-    - "04 Tools, plugins & multimodal AI"
-    - "05 Practical work & business"
-    - "06 Advertising campaigns"
-    - "07 Automation, assistants & agents"
-  note: "Detailed 24-lesson + 6-workshop structure is proposed and must not be treated as recovered live source until production source inventory is complete."
+  note: "The counts are now observed, not merely proposed. This file does not recover original authoring source or approve future content changes."
