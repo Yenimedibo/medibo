@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit",
     "build": "pnpm typecheck && vite build",
     "start": "node server.mjs",
-    "test:contracts": "MEDIBO_DOWNLOAD_MANIFEST=../../content/downloads.observed.json node --test compatibility.test.mjs server.test.mjs"
+    "test:contracts": "MEDIBO_DOWNLOAD_MANIFEST=../../content/downloads.observed.json node --test compatibility.test.mjs server.test.mjs vite.test.mjs"
   },
   "dependencies": {
     "lucide-react": "0.545.0",

@@ -45,13 +45,18 @@ export function handoffMiddleware(req, res, next) {
 }
 
 export function compatibilityPlugin() {
+  function installBeforeConnect(server) {
+    const middleware = server.middlewares;
+    const handle = middleware.handle;
+    // Connect parses req.url before its first .use() callback. Guard at entry,
+    // otherwise malformed absolute targets can throw before our middleware.
+    middleware.handle = function (req, res, next) {
+      return handoffMiddleware(req, res, () => handle.call(middleware, req, res, next));
+    };
+  }
   return {
     name: "medibo-preview-contract-handoffs",
-    configureServer(server) {
-      server.middlewares.use(handoffMiddleware);
-    },
-    configurePreviewServer(server) {
-      server.middlewares.use(handoffMiddleware);
-    },
+    configureServer: installBeforeConnect,
+    configurePreviewServer: installBeforeConnect,
   };
 }
