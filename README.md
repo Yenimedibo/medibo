@@ -2,7 +2,7 @@
 
 ## Authority and current state
 - VERIFIED — This GitHub repository is the controlled migration source, not yet canonical. https://bourkia.com remains the production authority until the parity gate passes and the human owner explicitly approves the transition.
-- VERIFIED — The repository contains governance, observed inventories and proposed specifications, not a rebuilt replacement website. The audit baseline is a6055e3.
+- VERIFIED — The repository contains governance, observed inventories, proposed specifications and a first [portable preview shell](site/preview-shell/README.md). It is not a full production replacement. The audit baseline is a6055e3; shell implementation starts from merged main e16599a.
 - UNKNOWN — Original authoring source, complete source export, build/dependency configuration and deployment configuration have not been recovered. Earlier governance described ChatGPT Sites; public frontend observations do not establish the original build setup.
 - VERIFIED — Owner-authorized recovery from the public production frontend is a valid reconstruction source when original authoring source is unavailable. Record provenance and limitations; do not invent missing original source or call reconstruction an exact export.
 
@@ -13,6 +13,7 @@ Use VERIFIED (directly observed), INFERRED (supported interpretation), PROPOSED 
 - [Observed download inventory](content/downloads.observed.json): 45 endpoints; supersedes the original incomplete proposed filenames for recovery, not proof of binary parity.
 - [First-parity contracts and gate](migration/first-parity-contracts.md) preserve routes, URLs/aliases, RTL, browser-storage compatibility and privacy promises.
 - [Proposed information architecture](site/information-architecture.proposed.md) records owner-approved direction separately from proposed route/layout decisions. It is not implementation or deployment approval.
+- VERIFIED — The subsequent owner task authorizes the limited Home/Courses/Reality 101/Workbench-entry/teaser implementation only. [Implementation boundaries and validation](migration/first-shell-handoff.md) distinguish shell behavior from live-origin dependencies. Full parity, merge and deployment remain subject to human approval.
 
 ## Normal workflow
 branch → validation → pull request → independent review → human approval → merge

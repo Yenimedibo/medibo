@@ -1,4 +1,20 @@
+# 2026-11-01 — Bounded draft-review fixes (preview only)
+
+- VERIFIED — Code commit `e92fbb599b7377d865cb845319fe6a51780a3970` includes the review fixes and the Vite-before-Connect guard; original implementation remains on the existing review branch, not main.
+- VERIFIED — Malformed `//[` and `http://[` targets return 400; added focused in-memory and real HTTP regressions for standalone, Vite development and Vite built preview. No production configuration changed.
+- VERIFIED — Workbench/Privacy direct entry, nav/Home/footer and client-router fallbacks now preserve live destinations. No original course, storage, privacy or media internals edited.
+- VERIFIED — Removed Home Journal/shop compatibility filler; retained `#journal` on the existing introduction and `#shop` on the existing Courses row. No replacement editorial narrative added.
+- VERIFIED — Standalone typecheck/build and ten automated tests passed. Fresh 28-assertion Chromium run at `29f86dea86d69dd1204cd3adf62bb867cacd56c4` covered revised UI/native handoffs/client fallback/390px/keyboard/reduced motion; UI source is byte-identical at `e92fbb5`. Final live Vite HTTP probe at `e92fbb5`: 157 requests passed. This is separate from the historical 28-check report at `c7500f2`; video playback was not repeated.
+- UNKNOWN — Full portability, download payload integrity, production readiness and cross-browser/accessibility conformance remain unestablished. Noindex retained; no CI workflow added (separate Claude scope). See the updated draft handoff.
+
 # Changelog
+
+## 2026-10-31 — First portable website shell (preview only)
+- VERIFIED — Added a portable React/Vite shell for personal Home, Courses, Reality 101, Workbench entry and unnamed teaser, starting from merged main e16599a.
+- VERIFIED — Kept course/Workbench internals and storage untouched; explicit live-origin entry links and read-only course/download/media path handoffs preserve existing contracts without copying payloads or user records.
+- VERIFIED — Added native episode players using unchanged live media URLs, legacy homepage fragment targets, reduced-motion/focus styles and preview noindex safeguards.
+- VERIFIED — Added standalone install/build/start instructions, locked dependencies and route/download contract unit tests. Validation scope and limits are recorded in migration/first-shell-handoff.md.
+- UNKNOWN — Complete parity, full video playback, download payload integrity and course/Workbench offline independence remain unverified. No production/DNS/visibility/deploy/merge changes.
 
 ## 2026-10-31 — Documentation reconciliation and proposed information architecture
 - VERIFIED — Reconciled repository role to controlled migration source; bourkia.com remains production authority until parity and human approval.

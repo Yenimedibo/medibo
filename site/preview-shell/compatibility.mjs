@@ -1,0 +1,62 @@
+/** Preview-only handoffs. No course, media, or user-data payloads are proxied. */
+export const PRODUCTION_ORIGIN = "https://bourkia.com";
+
+export function productionHandoff(rawUrl) {
+  const url = new URL(rawUrl, "http://preview.invalid");
+  const path = url.pathname;
+  const isCourse =
+    path === "/talk-to-ai" ||
+    path === "/talk-to-ai/" ||
+    path === "/courses/talk-to-ai" ||
+    path.startsWith("/courses/talk-to-ai/");
+  const isExistingMedia =
+    /^\/media\/reality-101-ep[12]\.(mp4|jpg)$/.test(path);
+  const isLiveFeature = /^\/(workbench|privacy)\/?$/.test(path);
+  return isCourse || isExistingMedia || isLiveFeature
+    ? `${PRODUCTION_ORIGIN}${path}${url.search}`
+    : null;
+}
+
+export function handoffMiddleware(req, res, next) {
+  let target;
+  try {
+    target = productionHandoff(req.url || "/");
+  } catch (error) {
+    if (!(error instanceof TypeError)) throw error;
+    res.writeHead(400, {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Robots-Tag": "noindex, nofollow",
+    });
+    res.end(req.method === "HEAD" ? undefined : "Bad request.");
+    return;
+  }
+  if (!target) return next();
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  res.setHeader("Cache-Control", "no-store");
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    res.writeHead(405, { Allow: "GET, HEAD" });
+    res.end("Preview handoffs accept read requests only.");
+    return;
+  }
+  // A Location without a fragment preserves the browser's incoming fragment.
+  res.writeHead(307, { Location: target });
+  res.end();
+}
+
+export function compatibilityPlugin() {
+  function installBeforeConnect(server) {
+    const middleware = server.middlewares;
+    const handle = middleware.handle;
+    // Connect parses req.url before its first .use() callback. Guard at entry,
+    // otherwise malformed absolute targets can throw before our middleware.
+    middleware.handle = function (req, res, next) {
+      return handoffMiddleware(req, res, () => handle.call(middleware, req, res, next));
+    };
+  }
+  return {
+    name: "medibo-preview-contract-handoffs",
+    configureServer: installBeforeConnect,
+    configurePreviewServer: installBeforeConnect,
+  };
+}
