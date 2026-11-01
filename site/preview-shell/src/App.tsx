@@ -16,7 +16,9 @@ function App() {
           <Route path="/courses" component={Courses} />
           <Route path="/reality-101" component={Reality} />
           <Route path="/workbench" component={Workbench} />
+          <Route path="/workbench/" component={Workbench} />
           <Route path="/privacy" component={Privacy} />
+          <Route path="/privacy/" component={Privacy} />
           <Route component={NotFound} />
         </Switch>
       </Shell>

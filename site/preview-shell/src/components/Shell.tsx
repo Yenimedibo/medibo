@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
+import { LIVE } from './links';
 
 const NAV = [
   { href: '/', label: 'Home' },
   { href: '/courses', label: 'Courses' },
   { href: '/reality-101', label: 'Reality 101' },
-  { href: '/workbench', label: 'Workbench' },
+  { href: LIVE.workbench, label: 'Workbench' },
 ];
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -76,8 +77,9 @@ export function Shell({ children }: { children: ReactNode }) {
           }}>
             {NAV.map((n, i) => {
               const active = n.href === '/' ? loc === '/' : loc.startsWith(n.href);
+              const NavigationLink = n.href.startsWith('https://') ? 'a' : Link;
               return (
-                <Link
+                <NavigationLink
                   key={n.href}
                   href={n.href}
                   className="nav__link"
@@ -86,7 +88,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 >
                   <span className="nav__num">0{i}</span>
                   {n.label}
-                </Link>
+                </NavigationLink>
               );
             })}
           </nav>
@@ -97,7 +99,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="footer__inner">
           <p className="footer__sig">Medibo — Mehdi Bourkia.<br />Learn, question, build, explore.</p>
           <ul className="footer__links">
-            <li><Link href="/privacy" data-testid="link-footer-privacy">Privacy &amp; storage</Link></li>
+            <li><a href={LIVE.privacy} data-testid="link-footer-privacy">Privacy &amp; storage</a></li>
             <li><a href="https://bourkia.com/" data-testid="link-footer-live">bourkia.com</a></li>
           </ul>
           <p className="footer__note">Staging preview · noindex requested · no application storage or analytics.</p>

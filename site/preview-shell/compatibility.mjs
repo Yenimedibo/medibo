@@ -11,13 +11,26 @@ export function productionHandoff(rawUrl) {
     path.startsWith("/courses/talk-to-ai/");
   const isExistingMedia =
     /^\/media\/reality-101-ep[12]\.(mp4|jpg)$/.test(path);
-  return isCourse || isExistingMedia
+  const isLiveFeature = /^\/(workbench|privacy)\/?$/.test(path);
+  return isCourse || isExistingMedia || isLiveFeature
     ? `${PRODUCTION_ORIGIN}${path}${url.search}`
     : null;
 }
 
 export function handoffMiddleware(req, res, next) {
-  const target = productionHandoff(req.url || "/");
+  let target;
+  try {
+    target = productionHandoff(req.url || "/");
+  } catch (error) {
+    if (!(error instanceof TypeError)) throw error;
+    res.writeHead(400, {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Robots-Tag": "noindex, nofollow",
+    });
+    res.end(req.method === "HEAD" ? undefined : "Bad request.");
+    return;
+  }
   if (!target) return next();
   res.setHeader("X-Robots-Tag", "noindex, nofollow");
   res.setHeader("Cache-Control", "no-store");

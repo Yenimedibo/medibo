@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { Link } from 'wouter';
-import { EPISODES } from '../components/links';
+import { EPISODES, LIVE } from '../components/links';
 
 const PROJECTS = [
   { verb: 'Learn', title: 'Courses', href: '/courses', line: 'Structured paths through subjects worth understanding properly. Currently: TALK TO AI — From Introduction to Mastery.' },
   { verb: 'Question', title: 'Reality 101', href: '/reality-101', line: 'Layers of Uncertainty. A video series that looks at what we know, and how sure we are allowed to be.' },
-  { verb: 'Build', title: 'Workbench', href: '/workbench', line: 'A private place to think in writing. It runs in your own browser on the live site.' },
+  { verb: 'Build', title: 'Workbench', href: LIVE.workbench, line: 'A private place to think in writing. It runs in your own browser on the live site.' },
 ];
 
 export default function Home() {
@@ -21,7 +21,7 @@ export default function Home() {
         <h1 id="hero-title" className="hero__title rise d1">
           I'm Mehdi<br />Bourkia.
         </h1>
-        <div className="hero__body rise d2">
+        <div id="journal" className="hero__body rise d2">
           <p className="lede">
             I build, study and document things that help me understand how technology, science, ideas and human systems work.
           </p>
@@ -41,17 +41,19 @@ export default function Home() {
           <h2 id="work-title" className="h2">Four ways in</h2>
         </div>
         <ol className="projects">
-          {PROJECTS.map((p, i) => (
-            <li key={p.title} className="project">
-              <Link href={p.href} className="project__link" data-testid={`card-project-${p.title.toLowerCase().replace(/\s/g, '-')}`}>
+          {PROJECTS.map((p, i) => {
+            const ProjectLink = p.href.startsWith('https://') ? 'a' : Link;
+            return (
+            <li key={p.title} id={p.title === 'Courses' ? 'shop' : undefined} className="project">
+              <ProjectLink href={p.href} className="project__link" data-testid={`card-project-${p.title.toLowerCase().replace(/\s/g, '-')}`}>
                 <span className="project__num">0{i + 1}</span>
                 <span className="project__verb">{p.verb}</span>
                 <span className="project__title">{p.title}</span>
                 <span className="project__line">{p.line}</span>
                 <span className="project__arrow" aria-hidden="true">→</span>
-              </Link>
+              </ProjectLink>
             </li>
-          ))}
+          );})}
           <li className="project project--teaser" data-testid="card-project-teaser">
             <div className="project__link" aria-label="Explore: an unnamed investigation">
               <span className="project__num">04</span>
@@ -82,18 +84,6 @@ export default function Home() {
         </ul>
       </section>
 
-      <section id="journal" className="wrap section" aria-labelledby="journal-title">
-        <div className="split">
-          <div>
-            <p className="kicker">Journal</p>
-            <h2 id="journal-title" className="h2">Notes in progress</h2>
-          </div>
-          <p className="prose">
-            This preview groups the work by project. Follow a project above for its existing materials.
-          </p>
-        </div>
-      </section>
-
       <section id="about" className="wrap section" aria-labelledby="about-title">
         <div className="split">
           <div>
@@ -102,9 +92,6 @@ export default function Home() {
           </div>
           <div className="prose">
             <p>Medibo is Mehdi Bourkia's personal space for learning, questioning and building useful things.</p>
-            <p id="shop" className="muted">
-              There is nothing for sale here. Course materials remain where they have always been, inside each course.
-            </p>
           </div>
         </div>
       </section>

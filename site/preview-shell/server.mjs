@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { handoffMiddleware } from "./compatibility.mjs";
 
 const directory = resolve(dirname(fileURLToPath(import.meta.url)), "dist/public");
-const knownPages = new Set(["/", "/courses", "/reality-101", "/workbench", "/privacy"]);
+const knownPages = new Set(["/", "/courses", "/reality-101"]);
 const types = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
