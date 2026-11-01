@@ -1,3 +1,12 @@
+# 2026-11-01 — Visitor-facing portfolio presentation
+
+- VERIFIED — Separate branch `presentation/editorial-project-slides` starts from PR #2 head `3adc7c6fe47f96e7230c61f4f0f369be56f91575`. Main presentation/browser-test commit: `c7a9d7d962cac800e768271ef4a996922445fc48`; final source `f0343b3e8b3470e45786e58239b7dcccf5e71846` only removes one public unfinished-project filler sentence. The separate CI branch/PR is not imported or changed.
+- VERIFIED — Kept the existing personal introduction and goals; added the approved public bio, four manually controlled editorial project slides, a scalable single-course listing with existing PDF links, and the public Reality 101 episode titles/descriptions. No new personal claims or future courses invented.
+- VERIFIED — Removed visitor-facing staging commentary while retaining noindex; kept the unnamed investigation free of book/release/commercial/signup framing, including labels and metadata.
+- VERIFIED — Fresh portable typecheck/build and all ten current contract/regression tests passed. Fresh Vite HTTP probe: 157 requests passed without following redirects; 18 mirrored authored files match the code commit and protected runtime/package/lock/feature-handoff files match the feature base.
+- VERIFIED — Fresh isolated browser checks covered manual slide keyboard/touch/boundary focus, inactive panels, anchors, menu/skip/navigation focus, reduced-motion emulation, one course/PDF/RTL links and original native video attributes. Browser test flagged unfinished-project filler, removed in the final one-line source fix; controls did not change. Final build/ten tests/157 HTTP requests and four requested screenshots were newly checked at the final source. Historical CI/browser passes are not reused as new evidence.
+- VERIFIED — Live-origin handoffs, privacy/storage implementations, original media URLs, download aliases, EN/Darija/hash/RTL behavior and original feature modules were not rewritten. Browser evidence and limitations are recorded in the separate presentation handoff.
+
 # 2026-11-01 — Bounded draft-review fixes (preview only)
 
 - VERIFIED — Code commit `e92fbb599b7377d865cb845319fe6a51780a3970` includes the review fixes and the Vite-before-Connect guard; original implementation remains on the existing review branch, not main.

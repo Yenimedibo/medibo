@@ -1,11 +1,72 @@
 import { useEffect } from 'react';
 import { Link } from 'wouter';
 import { EPISODES, LIVE } from '../components/links';
+import { Slides } from '../components/Slides';
+import { EPISODE_INFO } from './Reality';
 
-const PROJECTS = [
-  { verb: 'Learn', title: 'Courses', href: '/courses', line: 'Structured paths through subjects worth understanding properly. Currently: TALK TO AI — From Introduction to Mastery.' },
-  { verb: 'Question', title: 'Reality 101', href: '/reality-101', line: 'Layers of Uncertainty. A video series that looks at what we know, and how sure we are allowed to be.' },
-  { verb: 'Build', title: 'Workbench', href: LIVE.workbench, line: 'A private place to think in writing. It runs in your own browser on the live site.' },
+const SLIDES = [
+  {
+    key: 'courses', label: 'Learn — Courses',
+    content: (
+      <article className="slide">
+        <p className="slide__verb">Learn</p>
+        <h3 className="slide__title">Courses</h3>
+        <div className="slide__body">
+          <p className="slide__lead">TALK TO AI — <em>From Introduction to Mastery.</em></p>
+          <dl className="facts">
+            <div><dt>Foundation lessons</dt><dd>24</dd></div>
+            <div><dt>Applied workshops</dt><dd>6</dd></div>
+            <div><dt>Languages</dt><dd>English + Darija</dd></div>
+          </dl>
+          <p>Free to read and download. No payment, no enrollment.</p>
+          <Link href="/courses" className="slide__link" data-testid="link-slide-courses">See the courses <span aria-hidden="true">→</span></Link>
+        </div>
+      </article>
+    ),
+  },
+  {
+    key: 'reality', label: 'Question — Reality 101',
+    content: (
+      <article className="slide">
+        <p className="slide__verb">Question</p>
+        <h3 className="slide__title">Reality 101</h3>
+        <div className="slide__body">
+          <p className="slide__lead">We inherit explanations before we learn how to question them.</p>
+          <p>Reality 101 is my ongoing attempt to slow down, separate observation from interpretation, and follow reality wherever it leads.</p>
+          <blockquote className="slide__quote">No model is reality—not even Reality 101.</blockquote>
+          <Link href="/reality-101" className="slide__link" data-testid="link-slide-reality">Watch the episodes <span aria-hidden="true">→</span></Link>
+        </div>
+      </article>
+    ),
+  },
+  {
+    key: 'workbench', label: 'Build — Workbench',
+    content: (
+      <article className="slide">
+        <p className="slide__verb">Build</p>
+        <h3 className="slide__title">Workbench</h3>
+        <div className="slide__body">
+          <ol className="steps">
+            <li>Capture claims</li><li>Formalize hypotheses</li><li>Log evidence</li><li>Expose every assumption</li>
+          </ol>
+          <p>Capture claims, formalize hypotheses, log evidence, and expose every assumption. Your entries stay in this browser.</p>
+          <a href={LIVE.workbench} className="slide__link" data-testid="link-slide-workbench">Open the Workbench <span aria-hidden="true">→</span></a>
+        </div>
+      </article>
+    ),
+  },
+  {
+    key: 'explore', label: 'Explore — unnamed investigation',
+    content: (
+      <article className="slide slide--quiet">
+        <p className="slide__verb">Explore</p>
+        <h3 className="slide__title"><em>Untitled</em></h3>
+        <div className="slide__body">
+          <p className="slide__lead">An investigation into the questions that refuse to disappear.</p>
+        </div>
+      </article>
+    ),
+  },
 ];
 
 export default function Home() {
@@ -29,10 +90,25 @@ export default function Home() {
             <p>This website is where those investigations become something tangible — courses, experiments, tools, videos and unfinished questions.</p>
             <p>Some projects are practical. Some are exploratory. Others may never arrive at a final answer.</p>
           </div>
-          <p className="hero__goal">
-            The goal is simple: <em>learn deeply, build useful things, and follow reality wherever it leads.</em>
-          </p>
         </div>
+      </section>
+
+      <section id="about" className="wrap section" aria-labelledby="about-title">
+        <div className="split">
+          <div>
+            <p className="kicker">About</p>
+            <h2 id="about-title" className="h2">Who is asking</h2>
+          </div>
+          <div className="prose">
+            <p>I'm Mehdi Bourkia—a Moroccan aviation technician, father, and independent creator. My work moves between engineering and imagination, evidence and meaning, the technical world and the human one.</p>
+            <p className="pull">I'm not here to preach answers. I'm here to share the journey.</p>
+          </div>
+        </div>
+        <ol className="goals" aria-label="Goals">
+          <li><span>i.</span> Learn deeply</li>
+          <li><span>ii.</span> Build useful things</li>
+          <li><span>iii.</span> Follow reality wherever it leads</li>
+        </ol>
       </section>
 
       <section id="work" className="wrap section" aria-labelledby="work-title">
@@ -40,30 +116,9 @@ export default function Home() {
           <p className="kicker">Index</p>
           <h2 id="work-title" className="h2">Four ways in</h2>
         </div>
-        <ol className="projects">
-          {PROJECTS.map((p, i) => {
-            const ProjectLink = p.href.startsWith('https://') ? 'a' : Link;
-            return (
-            <li key={p.title} id={p.title === 'Courses' ? 'shop' : undefined} className="project">
-              <ProjectLink href={p.href} className="project__link" data-testid={`card-project-${p.title.toLowerCase().replace(/\s/g, '-')}`}>
-                <span className="project__num">0{i + 1}</span>
-                <span className="project__verb">{p.verb}</span>
-                <span className="project__title">{p.title}</span>
-                <span className="project__line">{p.line}</span>
-                <span className="project__arrow" aria-hidden="true">→</span>
-              </ProjectLink>
-            </li>
-          );})}
-          <li className="project project--teaser" data-testid="card-project-teaser">
-            <div className="project__link" aria-label="Explore: an unnamed investigation">
-              <span className="project__num">04</span>
-              <span className="project__verb">Explore</span>
-              <span className="project__title project__title--quiet">Untitled</span>
-              <span className="project__line teaser-line">An investigation into the questions that refuse to disappear.</span>
-              <span className="project__arrow" aria-hidden="true">·</span>
-            </div>
-          </li>
-        </ol>
+        <div id="shop">
+          <Slides slides={SLIDES} label="Four ways in" />
+        </div>
       </section>
 
       <section id="episodes" className="wrap section band" aria-labelledby="episodes-title">
@@ -76,24 +131,12 @@ export default function Home() {
             <li key={e.n}>
               <Link href={`/reality-101#episode-${e.n}`} className="eplist__item" data-testid={`link-episode-${e.n}`}>
                 <span className="eplist__n">{String(e.n).padStart(2, '0')}</span>
-                <span>{e.label}</span>
-                <span className="eplist__go">Watch</span>
+                <span>{EPISODE_INFO[e.n]?.title ?? e.label}</span>
+                <span className="eplist__go">{EPISODE_INFO[e.n]?.duration} · Watch</span>
               </Link>
             </li>
           ))}
         </ul>
-      </section>
-
-      <section id="about" className="wrap section" aria-labelledby="about-title">
-        <div className="split">
-          <div>
-            <p className="kicker">About</p>
-            <h2 id="about-title" className="h2">Medibo</h2>
-          </div>
-          <div className="prose">
-            <p>Medibo is Mehdi Bourkia's personal space for learning, questioning and building useful things.</p>
-          </div>
-        </div>
       </section>
     </div>
   );
