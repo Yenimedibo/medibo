@@ -1,0 +1,60 @@
+name: Preview shell checks
+
+# Ordinary PR execution only: no pull_request_target, secrets or deployment.
+on:
+  pull_request:
+    branches:
+      - implementation/portable-website-shell
+      - main
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  preview-shell:
+    name: Typecheck, build and contract regressions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: site/preview-shell
+        shell: bash
+    env:
+      CI: "true"
+    steps:
+      - name: Check out the PR merge candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up the existing tested Node runtime
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24.22.1"
+          package-manager-cache: false
+
+      - name: Install the package-manager version pinned by the project
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0 (peeled tag)
+        with:
+          package_json_file: site/preview-shell/package.json
+          run_install: false
+          cache: false
+
+      - name: Confirm runtime and pinned package manager
+        run: |
+          test "$(node --version)" = "v24.22.1"
+          test "$(pnpm --version)" = "$(node --input-type=module -e "import fs from 'node:fs'; console.log(JSON.parse(fs.readFileSync('package.json', 'utf8')).packageManager.split('@')[1])")"
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Existing standalone/Vite HTTP tests require dist/public.
+      - name: Build the preview
+        run: pnpm build
+
+      - name: Run all current contract and regression checks
+        run: pnpm test:contracts

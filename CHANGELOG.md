@@ -1,3 +1,12 @@
+# 2026-11-01 — Separate preview-shell CI proposal
+
+- VERIFIED — CI-only branch `ci/preview-shell-checks` starts from PR #2 branch head `3adc7c6fe47f96e7230c61f4f0f369be56f91575`. Workflow commit: `043a4a8aa86efbb1dab58d00555de6f1e51a4d0a`.
+- VERIFIED — Added ordinary pull-request verification with read-only repository permissions, immutable action pins, no persisted checkout credentials, no supplied secrets, no deployment and no repository-writing steps.
+- VERIFIED — Uses the existing tested Node 24.22.1 and project-pinned pnpm 10.11.0; frozen install, typecheck, build, and all ten existing contract/regression tests passed locally. Package/lockfile checksums unchanged. Workflow passed actionlint 1.7.12, YAML/policy assertions and Bash syntax checks.
+- VERIFIED — All action SHAs were checked against their official release/tag API records before committing; pnpm's annotated tag was peeled to its commit. See [CI handoff](migration/preview-shell-ci-handoff.md).
+- VERIFIED — Separate draft PR #3 targets the implementation branch. [GitHub-hosted run](https://github.com/Yenimedibo/medibo/actions/runs/41257164955) succeeded at head `639f6a95c20cd7eaec15d811d03c196f4d76752d`: exact runtime/pnpm setup, frozen install, typecheck, build and all ten tests passed. This following documentation-only update records that result; final-head check status remains visible on the PR.
+- VERIFIED — Runtime source, dependencies, course/Workbench internals, downloads, media, browser storage and privacy promises unchanged. PR #2 is not replaced or merged; no production/deployment/access/domain changes.
+
 # 2026-11-01 — Bounded draft-review fixes (preview only)
 
 - VERIFIED — Code commit `e92fbb599b7377d865cb845319fe6a51780a3970` includes the review fixes and the Vite-before-Connect guard; original implementation remains on the existing review branch, not main.
