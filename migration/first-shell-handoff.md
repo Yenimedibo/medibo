@@ -1,45 +1,60 @@
-# First portable shell — implementation handoff
+# First portable shell — current draft-review handoff
 
-## Scope and provenance
+## Status and provenance
 
-- VERIFIED — This is newly authored implementation from merged main e16599a, following the owner's first-implementation task. It is not a recovered original build/source export.
-- VERIFIED — [Portable source](../site/preview-shell/README.md) implements Home, Courses index, Reality 101, Workbench entry and an unnamed teaser. Existing course/Workbench internals, 24 lessons, translations, videos and downloadable payloads are not rewritten, copied or regenerated.
-- VERIFIED — The Home introduction follows the owner-supplied copy; teaser has no public internal title, book/release framing or purchase/download/signup CTA. No future courses, episodes or research claims are invented.
-- PROPOSED — Presentation is ready for independent UX/editorial review; implementation authorization is not approval of the finished design.
+- VERIFIED — Existing branch: `implementation/portable-website-shell`, draft PR #2. Approved base remains `e16599a5e626c1bd834ab8557707e5db999f29d7`; initial shell was `c7500f2d760634be3820fc1d57f5f18956cf9b78`.
+- VERIFIED — Latest tested code: `e92fbb599b7377d865cb845319fe6a51780a3970`. The following documentation-only commit records those results; it does not change tested code.
+- VERIFIED — Newly authored Replit shell, not recovered original modules. ChatGPT's separate implementation `2d99c8b` and later coordination package remain unreceived/uninspected here and are NOT combined with this branch.
+- VERIFIED — Claude's partial review covered selected handoff/configuration files, not full server/src/governance/rendered behavior. ChatGPT supplied additional source/governance observations and malformed-target reproduction. Replit implemented the owner-authorized fixes and independently ran the scoped checks below. These are distinct evidence sources.
 
-## Compatibility boundary
+## 1. What was inspected / why
 
-- VERIFIED — `/courses` is a local index; `/talk-to-ai`, `/courses/talk-to-ai` and every child path use explicit 307 handoffs to the fixed `https://bourkia.com` origin. New handoffs exist only in preview/dev servers. Production redirects/configuration are not changed.
-- VERIFIED — All 45 requested download paths and observed final aliases are covered unchanged. Browser fragments are not visible to HTTP; Location omits a fragment, retaining the incoming EN/Darija deep link in conforming browsers. Query strings remain intact.
-- VERIFIED — Workbench is an entry/preservation shell with an explicit same-tab production link, not a relocated application. Existing production-origin records and backup namespaces remain owned by that app; this shell contains no storage API calls, migrations, account sync, database, analytics or AI submission.
-- VERIFIED — Production privacy is linked rather than silently replaced. Hosting request logs remain provider-specific. The preview is noindex, not private authentication.
-- VERIFIED — Existing episode MP4/poster URLs are referenced unchanged. Native video controls, no autoplay.
-- UNKNOWN — Full self-contained portable parity is not achieved. Course, Workbench, privacy and video dependencies still require production. Do not deploy this as a replacement or claim local copies/data synchronization.
+VERIFIED — Existing review branch/source, compatibility middleware, standalone server, Shell/Home/Workbench/Privacy routes, earlier handoff and read-only coordination results. Applied only the agreed bad-request/live-handoff/public-filler fixes; no course or Workbench-internals reconstruction.
 
-## Legacy homepage fragments
+## 2. What changed
 
-- VERIFIED — `#top` and `#main-content` retain top/skip-link targets; `#about` targets the brief bio; `#work` targets project discovery; `#episodes` points to existing-episode links leading to Reality 101.
-- VERIFIED — `#journal` retains a brief project-materials explanation, and `#shop` retains a no-sales compatibility note, not fictitious journal/shop pages. Their original section content is not reproduced in this approved cleaner shell.
-- PROPOSED — Review any further legacy-fragment transitions with the owner before changing targets. No server fragment redirects are implemented.
+- VERIFIED — Invalid URL targets (`//[` and `http://[`) now produce plain-text 400, no-store/noindex and no redirect/fallthrough. HEAD has no body. Focused in-memory and real-server regressions cover them.
+- VERIFIED — A fresh raw HTTP probe exposed Vite Connect parsing `http://[` before `.use()` middleware and terminating the dev process. The plugin now wraps Connect's entry handler so the same guard runs first. Both actual Vite development and built-preview servers have regression tests; ordinary routes/handoffs remain functional. No third-party package changes.
+- VERIFIED — Direct `/workbench`, `/workbench/`, `/privacy`, `/privacy/` GET/HEAD use 307 handoffs, preserving pathname/query. Navigation, Home Workbench project and Privacy footer use native absolute production links, not wouter Links. Existing client-router entry also falls back to `location.replace` at the canonical live feature URL with query/hash. The fallback link wording is only “Continue to …”; no new explanatory/editorial narrative.
+- VERIFIED — No storage API, account, sync, analytics, cloud persistence or AI submission introduced. Original live storage/privacy code is untouched. No actual user/browser records inspected, migrated, cleared or read.
+- VERIFIED — Removed the visible Journal preview explanation and nothing-for-sale/material-location paragraph. Existing `#journal` now targets the introduction; `#shop` targets the existing Courses row. All seven legacy targets remain unique. These are useful current-content targets, not recreated historical sections.
+- VERIFIED — Course entry/subtree/download rules unchanged; all 45 observed requested paths and final aliases still hand off. Existing episode source/poster URLs, Reality/Courses source, live URL constants, robots/index HTML are byte-identical to the initial shell.
+- VERIFIED — Noindex retained. Client-side route titles/descriptions/OG exist; static per-page/pre-rendered metadata and canonical remain absent. No indexable/production switch was added.
 
-## Validation scope
+## 3. Affected components
 
-Recorded validation is scoped to this shell, not a passed production parity gate. The PR contains the final command results and preview/screenshots; HTTP availability never substitutes for payload integrity.
+Portable files under `site/preview-shell`: compatibility middleware/plugin/tests, server page classification and HTTP tests, new Vite regressions, test command, App, Shell, Home, Workbench/Privacy client fallbacks and shared LiveDestination. Documentation: this handoff, preview README and CHANGELOG. Replit preview mirrors these authored code files; workspace-only configuration is not imported upstream. No CI workflow, governance/content manifest, original lesson, media or download payload changed.
 
-- VERIFIED — Route-contract unit tests cover the separate Courses index, course entries/subtree, all 45 observed downloads and final aliases, fixed destination/query preservation and mutation rejection.
-- VERIFIED — Public HEAD probes returned 200 for existing course entry, Workbench, privacy, both MP4s and both JPEG posters. Payload content, complete playback and user-state behavior were not inspected.
-- VERIFIED — Standalone pnpm install, TypeScript check and Vite build passed. Four contract unit tests passed. Development HTTP probes confirmed five shell pages (200), course handoffs (307) and every observed download path/final alias. An isolated built-server check confirmed five pages, noindex headers, 404 behavior and a download handoff.
-- VERIFIED — Screenshots were visually inspected at 1440px desktop and 390px mobile for Home, and desktop for Courses and Reality 101. No application errors appeared in those capture logs. Earlier development-instrumentation syntax errors predated removal of scaffold dev plugins; the final captures use only React and the compatibility plugin.
-- VERIFIED — Static inspection confirmed native links/button semantics, skip link, visible focus, menu aria-expanded/controls, Escape handling, route-focus handling and a reduced-motion rule disabling animation/transitions. This is not a completed runtime keyboard smoke test or assistive-technology audit.
-- UNKNOWN — Runtime Tab/Enter/mobile-menu keyboard smoke testing and reduced-motion emulation remain for independent review. No full end-to-end suite or code-review subagent was run for the first build. These validation gaps must not be represented as passed acceptance criteria.
-- VERIFIED — Screenshots are supplied alongside the Replit preview, not committed generated binaries. The development preview is temporary and depends on its running workflow; it is not a published deployment.
-- UNKNOWN — Complete course interaction/download binary parity, Workbench schema compatibility under a future reimplementation, cross-device/iOS/screen-reader behavior and full accessibility conformance remain outside this task.
+## 4. Risks / production ineligibility
 
-## Standard COLLABORATION.md handoff
+- VERIFIED — **Not eligible for production cutover.** Fixed-origin redirects would self-redirect on the production origin; original course/Workbench/privacy implementations and downloads are not local replacements. Two feature redirects do not establish portability. No self-origin deployment guard was added; scope any guard separately. Never deploy this preview as bourkia.com.
+- UNKNOWN — Full parity, offline operation, payload hashes/content-disposition/download-button behavior, actual feature runtime behavior, production-origin storage compatibility, full video playback/seek/captions, physical devices, iOS/Safari, screen readers and full accessibility remain unverified.
+- VERIFIED — Noindex is appropriate for staging, but not authentication or a safety guard. Provider request logs are outside this frontend.
+- PROPOSED — Human/editorial review should approve the cleaner public presentation and legacy-anchor mapping. No new marketing text was drafted to replace removed filler.
 
-1. VERIFIED — Inspected merged governance/manifests, approved direction, audit/download inventories and the owner's bounded shell task.
-2. VERIFIED — Added the shell and compatibility handoffs because the owner authorized the first implementation; PROPOSED visual treatment awaits review.
-3. VERIFIED — Affected portable source under site/preview-shell, README.md, CHANGELOG.md, ignore rules and this handoff. No production asset/payload/source changes.
-4. UNKNOWN — Full production portability/parity is not established. Live-origin handoffs are intentional, not migrated internals.
-5. VERIFIED — Scoped unit/build/type/HTTP and visual-preview evidence are detailed above and in the PR; no actual user records inspected or migrated. UNKNOWN — runtime keyboard/reduced-motion emulation checks remain.
-6. PROPOSED — ChatGPT for continuity, Claude for architecture/editorial/QA and Gemini for UX/design, followed by human sign-off. Production deployment is NOT recommended. Do not merge or deploy automatically.
+## 5. Validation — distinguish new vs historical
+
+### Newly run for this revision
+
+- VERIFIED — `pnpm build` (TypeScript + Vite) passed at `e92fbb599b7377d865cb845319fe6a51780a3970`; Replit artifact typecheck also passed with the revised UI.
+- VERIFIED — `pnpm test:contracts`: **10 tests passed**, comprising six compatibility units (including 45 observed downloads/final aliases and malformed GET/HEAD), two standalone HTTP tests and two real Vite development/built-preview tests. Run build first; HTTP page checks need `dist/public`.
+- VERIFIED — **157 fresh HTTP requests** against the running Vite service at `e92fbb5` passed: malformed GET/HEAD return 400; three shell pages return 200/noindex metadata; live feature/course/all observed download aliases return exact 307 destinations with synthetic query preservation. No redirect was followed.
+- VERIFIED — A **new, separate 28-assertion browser run** at UI code commit `29f86dea86d69dd1204cd3adf62bb867cacd56c4` passed with no captured uncaught JS exceptions. All UI source files are byte-identical at `e92fbb5`; the later middleware-only fix was independently exercised by the HTTP/Vite tests. Do not relabel that browser run as executed at a different commit.
+- VERIFIED — New Chromium checks: visible skip-link Tab/Enter; Courses/Reality keyboard routing and main focus; 390px Menu Enter/Space/Tab/Escape/return focus and automatic close on local navigation; no narrow-layout overflow on the three retained shell pages; actual reduced-motion media emulation (computed animation/transition none/0s, auto scroll, zero running animations, retained on reload).
+- VERIFIED — Native Workbench nav and Home links plus Privacy footer attempted the exact live destinations. Client-router fallbacks for both paths/trailing variants preserved synthetic query/hash. Browser interception blocked every production document request before load. No live Workbench/privacy document or browser records were accessed.
+- VERIFIED — Browser DOM confirmed no removed filler, all seven unique anchors and noindex. Revised desktop screenshot inspected; mobile/menu/focus screenshots recorded. The final 17 authored source/public/HTML/server/handoff files match the portable code commit byte-for-byte.
+- VERIFIED — Existing workflow restarted after the middleware fix and served the 157-request probe without an error; no deployment created.
+
+Evidence in the Replit workspace (ignored, not Git binaries): `generated-artifacts/medibo-review-fix-runtime/results.json`, `http-dev-results.json`, revised Home/menu/focus screenshots. Reproduction probes: `.local/medibo-review-fix-check.mjs` and `.local/medibo-review-http.mjs`. Tracked Node tests reproduce compatibility and HTTP regressions without the browser helper.
+
+### Historical — not newly run media evidence
+
+VERIFIED — Earlier `c7500f2` 28-check run included EP1/EP2 metadata and brief playback, preserved in the earlier ignored coordination note. The new 28-check run has DIFFERENT coverage, including live link/fallback checks, and does not repeat video playback. Neither run proves full-duration playback, full original-feature parity or download payload integrity.
+
+UNKNOWN — No tracked CI workflow/reproducible browser job exists. CI is separately reserved for Claude; none added here.
+
+## 6. Review / stop
+
+PROPOSED — ChatGPT reconciles continuity/contracts, Claude independently reviews this bounded correction and owns separately scoped CI, Gemini reviews presentation as needed, and the human owner retains final authority.
+
+Keep PR #2 DRAFT. No merge, publish, deployment, DNS/domain, visibility or access changes. bourkia.com remains untouched.
