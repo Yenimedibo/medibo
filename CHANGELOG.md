@@ -4,7 +4,7 @@
 - VERIFIED — Added ordinary pull-request verification with read-only repository permissions, immutable action pins, no persisted checkout credentials, no supplied secrets, no deployment and no repository-writing steps.
 - VERIFIED — Uses the existing tested Node 24.22.1 and project-pinned pnpm 10.11.0; frozen install, typecheck, build, and all ten existing contract/regression tests passed locally. Package/lockfile checksums unchanged. Workflow passed actionlint 1.7.12, YAML/policy assertions and Bash syntax checks.
 - VERIFIED — All action SHAs were checked against their official release/tag API records before committing; pnpm's annotated tag was peeled to its commit. See [CI handoff](migration/preview-shell-ci-handoff.md).
-- UNKNOWN — GitHub-hosted execution at handoff authoring; subsequent run status belongs to the separate draft PR checks/description. Local passing checks are not a hosted-run claim.
+- VERIFIED — Separate draft PR #3 targets the implementation branch. [GitHub-hosted run](https://github.com/Yenimedibo/medibo/actions/runs/41257164955) succeeded at head `639f6a95c20cd7eaec15d811d03c196f4d76752d`: exact runtime/pnpm setup, frozen install, typecheck, build and all ten tests passed. This following documentation-only update records that result; final-head check status remains visible on the PR.
 - VERIFIED — Runtime source, dependencies, course/Workbench internals, downloads, media, browser storage and privacy promises unchanged. PR #2 is not replaced or merged; no production/deployment/access/domain changes.
 
 # 2026-11-01 — Bounded draft-review fixes (preview only)

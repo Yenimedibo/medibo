@@ -67,11 +67,17 @@ privacy promise, indexing safeguard or original shell handoff changed.
 
 ## 4. Risks / uncertainties
 
-UNKNOWN — At this handoff's authoring, GitHub-hosted execution has not occurred.
-Action runner compatibility, a clean hosted install, hosted network/registry access,
-repository policy and workflow publishing permission are not established by local
-results. Consult the separate draft PR's check runs and updated description for
-later observations; do not read this historical status as a passing hosted run.
+VERIFIED — The workflow branch pushed successfully and separate
+[draft PR #3](https://github.com/Yenimedibo/medibo/pull/3) targets
+`implementation/portable-website-shell`. [Hosted run 41257164955](https://github.com/Yenimedibo/medibo/actions/runs/41257164955)
+completed successfully at reported head `639f6a95c20cd7eaec15d811d03c196f4d76752d`.
+The PR merge candidate was `246097ef11ce579131428f5539facd03463d47f9`.
+This subsequent documentation-only update records that run; consult PR checks
+for its own final-head run. No action or runtime file changed after the passing run.
+
+UNKNOWN — Future runner/registry availability and future revision outcomes are
+not guaranteed by one passing run. Local observations alone were not treated
+as hosted evidence; the result above was read from the hosted job/step API and logs.
 
 VERIFIED — Ordinary PR code still executes build/install scripts on a disposable
 hosted runner. There are no owner-supplied secrets or write permissions. Workflow
@@ -101,6 +107,12 @@ VERIFIED — Newly run locally on Node `v24.22.1`, pnpm `10.11.0`:
    its release archive checksum matched the official checksums file. No validator
    dependency was added to the project.
 8. `git diff --check` passed before the workflow commit.
+
+VERIFIED — Newly run on GitHub-hosted Ubuntu 24.04, run `41257164955`:
+checkout, pinned action setup, exact Node `24.22.1` / pnpm `10.11.0` assertions,
+fresh frozen dependency install, typecheck and build all succeeded. Hosted logs
+report **10 tests, 10 passed, 0 failed**; all job/post-job steps completed successfully.
+This confirms hosted execution for that revision, not browser coverage or parity.
 
 No browser run, production request, deployment, dependency upgrade, merge or access
 change was performed. Previously reported browser/HTTP results are not relabeled as
