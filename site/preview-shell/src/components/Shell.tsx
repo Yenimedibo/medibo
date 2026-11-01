@@ -18,17 +18,18 @@ export function Shell({ children }: { children: ReactNode }) {
     setOpen(false);
     const changed = previousLocation.current !== loc;
     previousLocation.current = loc;
-    const titles: Record<string, string> = {
-      '/': 'Mehdi Bourkia',
-      '/courses': 'Courses',
-      '/reality-101': 'Reality 101 — Layers of Uncertainty',
-      '/workbench': 'Workbench — live-site entry',
-      '/privacy': 'Privacy & storage',
+    const meta: Record<string, [string, string]> = {
+      '/': ['Mehdi Bourkia — Medibo', 'Mehdi Bourkia\'s personal space for learning deeply, building useful things and following reality wherever it leads.'],
+      '/courses': ['Courses — Medibo', 'Free courses by Mehdi Bourkia, starting with TALK TO AI — From Introduction to Mastery, in English and Darija.'],
+      '/reality-101': ['Reality 101 — Layers of Uncertainty — Medibo', 'An ongoing attempt to slow down, separate observation from interpretation, and follow reality wherever it leads.'],
+      '/workbench': ['Workbench — Medibo', 'Capture claims, formalize hypotheses, log evidence, and expose every assumption.'],
+      '/privacy': ['Privacy & storage — Medibo', 'How Medibo handles privacy and storage.'],
     };
-    document.title = `${titles[loc] || 'Page not found'} | Medibo preview`;
+    const [title, desc] = meta[loc] || ['Page not found — Medibo', 'This address does not lead anywhere on Medibo.'];
+    document.title = title;
     for (const [property, content] of [
-      ['og:title', document.title],
-      ['og:description', 'Preview-only personal website shell. Production remains at bourkia.com.'],
+      ['og:title', title],
+      ['og:description', desc],
       ['og:type', 'website'],
     ]) {
       let element = document.querySelector<HTMLMetaElement>(`meta[property="${property}"]`);
@@ -40,7 +41,7 @@ export function Shell({ children }: { children: ReactNode }) {
       element.content = content;
     }
     const description = document.querySelector<HTMLMetaElement>('meta[name="description"]');
-    if (description) description.content = `${titles[loc] || 'Page not found'} — Medibo's preview-only website. Production remains at bourkia.com.`;
+    if (description) description.content = desc;
     if (changed) requestAnimationFrame(() => {
       const target = document.getElementById(window.location.hash.slice(1));
       if (target) target.scrollIntoView();
@@ -102,7 +103,6 @@ export function Shell({ children }: { children: ReactNode }) {
             <li><a href={LIVE.privacy} data-testid="link-footer-privacy">Privacy &amp; storage</a></li>
             <li><a href="https://bourkia.com/" data-testid="link-footer-live">bourkia.com</a></li>
           </ul>
-          <p className="footer__note">Staging preview · noindex requested · no application storage or analytics.</p>
         </div>
       </footer>
     </>
