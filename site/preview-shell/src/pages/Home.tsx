@@ -63,7 +63,6 @@ const SLIDES = [
         <h3 className="slide__title"><em>Untitled</em></h3>
         <div className="slide__body">
           <p className="slide__lead">An investigation into the questions that refuse to disappear.</p>
-          <p className="muted">Still being worked through. Nothing to show yet.</p>
         </div>
       </article>
     ),
