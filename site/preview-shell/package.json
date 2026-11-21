@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit",
     "build": "pnpm typecheck && vite build",
     "start": "CLERK_TELEMETRY_DISABLED=true node server.mjs",
-    "test:contracts": "CLERK_TELEMETRY_DISABLED=true MEDIBO_DOWNLOAD_MANIFEST=../../content/downloads.observed.json node --test compatibility.test.mjs compatibility.release.test.mjs server.test.mjs vite.test.mjs server/timelineData.test.mjs server/centuryPeriod.test.mjs server/timelinePeriod.contract.test.mjs src/lib/access.test.mjs src/lib/authRouting.test.mjs src/lib/legacyNavigation.test.mjs src/pages/TimelineMap.interaction.test.mjs"
+    "test:contracts": "CLERK_TELEMETRY_DISABLED=true MEDIBO_DOWNLOAD_MANIFEST=../../content/downloads.observed.json node --test compatibility.test.mjs compatibility.release.test.mjs server.test.mjs vite.test.mjs server/timelineData.test.mjs server/mapGeometryRules.test.mjs server/mapGeometry.contract.test.mjs server/centuryPeriod.test.mjs server/timelinePeriod.contract.test.mjs src/lib/access.test.mjs src/lib/authRouting.test.mjs src/lib/legacyNavigation.test.mjs src/pages/TimelineMap.interaction.test.mjs"
   },
   "dependencies": {
     "@clerk/express": "^2.1.96",

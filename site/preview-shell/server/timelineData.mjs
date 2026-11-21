@@ -1,6 +1,7 @@
 import { centuryPeriod } from './centuryPeriod.mjs';
 
 // Medibo Timeline Map — schema-aligned, read-only Sheets adapter.
+import { geometryMatchesFeatureType } from './mapGeometryRules.mjs';
 // This module deliberately does not fabricate events, map geometry, or publication approvals.
 const SPREADSHEET_ID = '1gSvwciQg_rz-5vBO_Ohih4jG773WBONgZpshgvNnKnc';
 const REFRESH_MS = 60_000;
@@ -226,7 +227,7 @@ function verifiedGeography(record, startYear) {
   if (['territory', 'route', 'area'].includes(type)) {
     const geometry = parseGeometry(field(record, ['Geometry ID / URL']));
     if (!geometry) return {}; // URL/ID backed geometry needs a separately verified loader.
-    if (geometry.type === 'Point' || geometry.type === 'MultiPoint') return {};
+    if (!geometryMatchesFeatureType(type, geometry)) return {};
     return { geometry, locationPrecision: 'verified' };
   }
   return {};
