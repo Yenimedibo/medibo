@@ -5,7 +5,8 @@ const REFRESH_MS = 60_000;
 const ERROR_CACHE_MS = 15_000;
 const READ_SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
 export const SHEET_RANGES = Object.freeze({
-  events: "'Map Events'!A1:AH2500",
+  events: "'Map Events'!A1:AK2500",
+  layers: "'Map Layers'!A1:Z200",
   context: "'Master Timeline'!A4:D1531",
   sources: "'Sources'!A1:D200",
   methodology: "'Methodology'!A1:B100",
@@ -61,6 +62,55 @@ export function rowsToRecords(rows) {
 function records(input) {
   if (!Array.isArray(input) || input.length === 0) return [];
   return Array.isArray(input[0]) ? rowsToRecords(input) : input;
+}
+
+const FALLBACK_LAYER_DEFAULTS = Object.freeze({
+  historical_events: true,
+  climate_disasters: false,
+  trade_resources: false,
+});
+function booleanValue(value) {
+  const normalized = status(value);
+  if (['yes', 'true', 'on', '1', 'visible', 'enabled'].includes(normalized)) return true;
+  if (['no', 'false', 'off', '0', 'hidden', 'disabled'].includes(normalized)) return false;
+  return undefined;
+}
+function isLayerPublic(record) {
+  if (isRejected(record)) return false;
+  const review = status(field(record, ['Layer Review Status', 'Review Status']));
+  if (review && !['approved', 'reviewed', 'verified'].includes(review)) return false;
+  const publication = status(field(record, ['Layer Publication Status', 'Publication Status']));
+  if (publication && !['approved', 'published', 'public', 'live'].includes(publication)) return false;
+  const enabled = field(record, ['Layer Enabled', 'Enabled', 'Active']);
+  if (String(enabled).trim() && booleanValue(enabled) !== true) return false;
+  const publicReady = field(record, ['Public Layer Ready', 'Layer Ready']);
+  if (String(publicReady).trim() && booleanValue(publicReady) !== true) return false;
+  return true;
+}
+export function parseMapLayers(values, { preview = false } = {}) {
+  const layers = [];
+  const seen = new Set();
+  for (const [index, record] of records(values).entries()) {
+    if (preview ? isRejected(record) : !isLayerPublic(record)) continue;
+    const id = safeText(field(record, ['Map Layer ID', 'Layer ID', 'ID']), 100);
+    const name = safeText(field(record, ['Layer Name', 'Display Name', 'Name', 'Label', 'Title']), 200);
+    if (!id || !name || seen.has(status(id))) continue;
+    seen.add(status(id));
+    const explicitDefault = booleanValue(field(record, [
+      'Default Visible', 'Default Visibility', 'Default On', 'Default Enabled', 'Default State',
+    ]));
+    const sortValue = Number(field(record, ['Sort Order', 'Display Order', 'Order', 'Position']));
+    layers.push({
+      id,
+      name,
+      defaultVisible: explicitDefault ?? FALLBACK_LAYER_DEFAULTS[status(id)] ?? false,
+      sortOrder: Number.isFinite(sortValue) ? sortValue : index,
+      ...(safeText(field(record, ['Description', 'Layer Description']), 500)
+        ? { description: safeText(field(record, ['Description', 'Layer Description']), 500) }
+        : {}),
+    });
+  }
+  return layers.sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 function buildSourceIndex(sourceRecords) {
@@ -181,10 +231,13 @@ function datePrecisionValid(record) {
   return ['exact year', 'approximate year', 'year range', 'century', 'disputed'].includes(
     status(field(record, ['Date Precision'])));
 }
-function toEvent(record, index, preview, sourceIndex) {
+function toEvent(record, index, preview, sourceIndex, layerIndex) {
   const originalId = safeText(field(record, ['Original Event ID']), 160);
   const id = safeText(field(record, ['Map Event ID', 'Event ID', 'ID']) ||
     (preview ? `draft-row-${record.__rowNumber ?? index + 2}` : ''), 200);
+  const layerId = safeText(field(record, ['Map Layer ID', 'Layer ID']), 100);
+  const layer = layerIndex.get(status(layerId));
+  if (!layer) return null;
   const start = parseYear(field(record, ['Start Year']));
   const endRaw = field(record, ['End Year']);
   const end = String(endRaw).trim() === '' ? null : parseYear(endRaw);
@@ -206,6 +259,12 @@ function toEvent(record, index, preview, sourceIndex) {
     (hasApproximatePoint || Boolean(field(record, ['Geometry ID / URL'])));
   return {
     id, ...(originalId ? { originalEventId: originalId } : {}),
+    layerId: layer.id,
+    layerName: layer.name,
+    layerSubtype: safeText(field(record, ['Layer Subtype']), 200),
+    ...(safeText(field(record, ['Linked Map Feature ID']), 160)
+      ? { linkedMapFeatureId: safeText(field(record, ['Linked Map Feature ID']), 160) }
+      : {}),
     title, startYear: validStart,
     ...(datesValid && end !== null ? { endYear: end } : {}),
     region: safeText(field(record, ['Region']) || 'Unclassified', 200),
@@ -223,13 +282,14 @@ function toEvent(record, index, preview, sourceIndex) {
     ...(where.geometry ? { geometry: where.geometry } : {}),
   };
 }
-export function parseTimelineRows(values, { preview = false, sources = [] } = {}) {
+export function parseTimelineRows(values, { preview = false, sources = [], layers = [] } = {}) {
   const sourceIndex = buildSourceIndex(sources);
+  const layerIndex = new Map(layers.map(layer => [status(layer.id), layer]));
   const seenIds = new Set();
   const out = [];
   for (const [index, rec] of records(values).entries()) {
     if (preview ? !isPreviewCandidate(rec) : !isPublicCandidate(rec)) continue;
-    const event = toEvent(rec, index, preview, sourceIndex);
+    const event = toEvent(rec, index, preview, sourceIndex, layerIndex);
     if (!event || seenIds.has(event.id)) continue; // Reject duplicate Map Event IDs rather than merge claims.
     seenIds.add(event.id);
     out.push(event);
@@ -288,11 +348,12 @@ async function loadWorkbook() {
   if (inFlight) return inFlight;
   inFlight = Promise.all([
     googleValues(SHEET_RANGES.events),
+    googleValues(SHEET_RANGES.layers),
     googleValues(SHEET_RANGES.context),
     googleValues(SHEET_RANGES.sources),
     googleValues(SHEET_RANGES.methodology),
-  ]).then(([events, context, sources, methodology]) => {
-    cachedWorkbook = { events, context, sources, methodology, lastSyncedAt: new Date().toISOString() };
+  ]).then(([events, layers, context, sources, methodology]) => {
+    cachedWorkbook = { events, layers, context, sources, methodology, lastSyncedAt: new Date().toISOString() };
     cachedAt = Date.now();
     cachedError = false;
     return { status: 'ready', workbook: cachedWorkbook };
@@ -315,19 +376,37 @@ function matches(event, { from, to, region, topic, period }) {
   if (period && status(event.period) !== period) return false;
   return true;
 }
+function selectedLayersFor(query, layers) {
+  const layerIds = new Set(layers.map(layer => status(layer.id)));
+  const hasExplicitSelection = Object.hasOwn(query, 'layers');
+  const requested = hasExplicitSelection
+    ? Array.isArray(query.layers)
+      ? query.layers
+      : String(query.layers ?? '').split(',')
+    : layers.filter(layer => layer.defaultVisible).map(layer => layer.id);
+  const requestedIds = new Set(requested.map(status).filter(Boolean));
+  return layers.filter(layer => layerIds.has(status(layer.id)) && requestedIds.has(status(layer.id)));
+}
 export function buildTimelineResponse({ workbook, query = {}, preview = false, canPreviewDrafts = false }) {
   const from = rangeYear(query.from, 500);
   const to = rangeYear(query.to, 2026);
+  const layers = parseMapLayers(workbook.layers, { preview });
+  const selectedLayers = selectedLayersFor(query, layers);
+  const selectedLayerIds = new Set(selectedLayers.map(layer => status(layer.id)));
   const filters = {
     from, to,
     region: status(query.region), topic: status(query.topic), period: status(query.period),
   };
-  const eventsAll = parseTimelineRows(workbook.events, { preview, sources: workbook.sources });
-  const events = from <= to ? eventsAll.filter(e => matches(e, filters)) : [];
+  const eventsAll = parseTimelineRows(workbook.events, { preview, sources: workbook.sources, layers });
+  const events = from <= to
+    ? eventsAll.filter(event => selectedLayerIds.has(status(event.layerId)) && matches(event, filters))
+    : [];
   return {
     status: eventsAll.length ? 'ready' : 'no-approved-data',
     lastSyncedAt: workbook.lastSyncedAt ?? null,
     refreshSeconds: REFRESH_MS / 1000,
+    layers,
+    selectedLayerIds: selectedLayers.map(layer => layer.id),
     events,
     context: previewContext(workbook.context, preview, from, to),
     methodology: previewMethodology(workbook.methodology, preview),
@@ -353,7 +432,7 @@ export async function getTimelineResponse({ userId, query = {} }) {
   const loaded = await loadWorkbook();
   if (loaded.status === 'disconnected' || loaded.status === 'error') return {
     status: loaded.status, lastSyncedAt: null, refreshSeconds: REFRESH_MS / 1000,
-    events: [], context: [], methodology: [], canPreviewDrafts,
+    layers: [], selectedLayerIds: [], events: [], context: [], methodology: [], canPreviewDrafts,
     message: loaded.status === 'disconnected'
       ? 'The private spreadsheet connection is not configured for this staging server.'
       : 'The spreadsheet could not be read. Check the service-account credential and Viewer sharing.',

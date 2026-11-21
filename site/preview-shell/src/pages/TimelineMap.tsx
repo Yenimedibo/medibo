@@ -74,6 +74,7 @@ export default function TimelineMap() {
   const [topic, setTopic] = useState('');
   const [period, setPeriod] = useState('');
   const [mode, setMode] = useState<'public' | 'preview'>('public');
+  const [selectedLayerIds, setSelectedLayerIds] = useState<string[] | null>(null);
   const [response, setResponse] = useState<TimelineResponse | null>(null);
   const [optionsResponse, setOptionsResponse] = useState<TimelineResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,6 +83,7 @@ export default function TimelineMap() {
   const [refreshTick, setRefreshTick] = useState(0);
   const [mapView, setMapView] = useState({ zoom: 1, x: 0, y: 0 });
   const dragRef = useRef<{ id: number; x: number; y: number; originX: number; originY: number } | null>(null);
+  const knownLayerIdsRef = useRef<Set<string>>(new Set());
 
   const fetchTimeline = useCallback(async (query: URLSearchParams, signal: AbortSignal) => {
     const result = await fetch(`${basePath}/api/timeline-map?${query.toString()}`, { signal, headers: { Accept: 'application/json' } });
@@ -98,13 +100,15 @@ export default function TimelineMap() {
       period,
       mode,
     });
+    if (selectedLayerIds !== null) params.set('layers', selectedLayerIds.join(','));
     return params.toString();
-  }, [from, to, region, topic, period, mode]);
+  }, [from, to, region, topic, period, mode, selectedLayerIds]);
 
   useEffect(() => {
     const controller = new AbortController();
     const params = new URLSearchParams(queryString);
     const options = new URLSearchParams({ from: String(from), to: String(to), region: '', topic: '', period: '', mode });
+    if (selectedLayerIds !== null) options.set('layers', selectedLayerIds.join(','));
     setLoading(true);
     setRequestError(false);
     Promise.all([
@@ -113,6 +117,23 @@ export default function TimelineMap() {
     ]).then(([data, allOptions]) => {
       setResponse(data);
       setOptionsResponse(allOptions);
+      setSelectedLayerIds((current) => {
+        const available = new Set(data.layers.map((layer) => layer.id));
+        const known = knownLayerIdsRef.current;
+        if (current === null) {
+          knownLayerIdsRef.current = available;
+          return data.selectedLayerIds;
+        }
+        const next = new Set(current.filter((id) => available.has(id)));
+        for (const layer of data.layers) {
+          if (!known.has(layer.id) && layer.defaultVisible) next.add(layer.id);
+        }
+        knownLayerIdsRef.current = available;
+        const nextIds = data.layers.filter((layer) => next.has(layer.id)).map((layer) => layer.id);
+        return current.length === nextIds.length && current.every((id, index) => id === nextIds[index])
+          ? current
+          : nextIds;
+      });
       setSelectedId((current) => data.events.some((event) => event.id === current) ? current : null);
     }).catch((error: unknown) => {
       if (error instanceof DOMException && error.name === 'AbortError') return;
@@ -122,18 +143,22 @@ export default function TimelineMap() {
       if (!controller.signal.aborted) setLoading(false);
     });
     return () => controller.abort();
-  }, [fetchTimeline, queryString, from, to, mode, refreshTick]);
+  }, [fetchTimeline, queryString, from, to, mode, refreshTick, selectedLayerIds]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setRefreshTick((tick) => tick + 1), 60_000);
     return () => window.clearInterval(timer);
   }, []);
 
-  const availableEvents = optionsResponse?.events ?? response?.events ?? [];
+  const visibleLayerIds = selectedLayerIds ?? response?.selectedLayerIds ?? [];
+  const availableEvents = (optionsResponse?.events ?? response?.events ?? [])
+    .filter((event) => visibleLayerIds.includes(event.layerId));
   const regions = useMemo(() => [...new Set(availableEvents.map((event) => event.region).filter(Boolean))].sort(), [availableEvents]);
   const types = useMemo(() => [...new Set(availableEvents.map((event) => event.eventType).filter(Boolean))].sort(), [availableEvents]);
   const periods = useMemo(() => [...new Set(availableEvents.map((event) => event.period).filter(Boolean))].sort(), [availableEvents]);
   const events = useMemo(() => (response?.events ?? []).filter((event) =>
+    visibleLayerIds.includes(event.layerId)
+    &&
     (!region || event.region === region)
     && (!topic || event.eventType === topic)
     && (!period || event.period === period)
@@ -141,7 +166,7 @@ export default function TimelineMap() {
       event.startYear <= to
       && (event.endYear ?? event.startYear) >= from
     )),
-  ), [response, region, topic, period, from, to]);
+  ), [response, region, topic, period, from, to, visibleLayerIds]);
   const selected = events.find((event) => event.id === selectedId) ?? null;
 
   const world = useMemo(() => {
@@ -174,6 +199,16 @@ export default function TimelineMap() {
     setRegion('');
     setTopic('');
     setPeriod('');
+  };
+  const toggleLayer = (id: string) => {
+    setSelectedLayerIds((current) => {
+      const next = new Set(current ?? response?.selectedLayerIds ?? []);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return (response?.layers ?? [])
+        .filter((layer) => next.has(layer.id))
+        .map((layer) => layer.id);
+    });
   };
   const mapTransform = `translate(${mapView.x} ${mapView.y}) translate(450 220) scale(${mapView.zoom}) translate(-450 -220)`;
   const startMapDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -303,6 +338,41 @@ export default function TimelineMap() {
 
           <aside className="timeline-filters" aria-labelledby="filter-title">
             <div className="timeline-section-head timeline-filter-head"><div><p className="timeline-label">Refine the record</p><h2 id="filter-title">Filters</h2></div></div>
+            {response?.layers.length ? (
+              <fieldset className="timeline-layer-fieldset">
+                <legend>Map layers</legend>
+                <p className="timeline-layer-help">Choose which record groups appear in both the map and chronology.</p>
+                <div className="timeline-layer-list">
+                  {response.layers.map((layer, index) => {
+                    const checked = (selectedLayerIds ?? response.selectedLayerIds).includes(layer.id);
+                    const descriptionId = `timeline-layer-description-${index}`;
+                    return (
+                      <button
+                        key={layer.id}
+                        className={`timeline-layer-switch${checked ? ' is-on' : ''}`}
+                        type="button"
+                        role="switch"
+                        aria-checked={checked}
+                        aria-label={layer.name}
+                        aria-describedby={layer.description ? descriptionId : undefined}
+                        onClick={() => toggleLayer(layer.id)}
+                        data-testid={`switch-layer-${layer.id}`}
+                      >
+                        <span className="timeline-layer-switch-track" aria-hidden="true"><span /></span>
+                        <span className="timeline-layer-switch-copy">
+                          <strong>{layer.name}</strong>
+                          {layer.description && <small id={descriptionId}>{layer.description}</small>}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            ) : (
+              <p className="timeline-layer-empty" role="status">
+                {loading ? 'Loading available map layers…' : 'No public map layers are currently available.'}
+              </p>
+            )}
             <div className="timeline-year-fields">
               <label>From year
                 <input type="number" min={MIN_YEAR} max={MAX_YEAR} value={from} onChange={(event) => setFrom(Math.min(clampYear(event.target.value, from), to))} aria-label="Start year from 500 to 2026" data-testid="input-timeline-from" />
@@ -366,10 +436,16 @@ export default function TimelineMap() {
               <div><h3>No records match this view.</h3><p>Try widening the year range or clearing one of the filters. No historical entries have been added to fill this space.</p></div>
             </div>
           )}
-          {!loading && events.length > 0 && (
+          {events.length > 0 && (
             <div className="timeline-record-list">
               {events.map((event, index) => (
-                <article className={`timeline-record confidence-${event.confidence}${selectedId === event.id ? ' is-selected' : ''}`} key={event.id} id={`event-${event.id}`}>
+                <article
+                  className={`timeline-record confidence-${event.confidence}${selectedId === event.id ? ' is-selected' : ''}`}
+                  key={event.id}
+                  id={`event-${event.id}`}
+                  data-layer-id={event.layerId}
+                  data-linked-map-feature-id={event.linkedMapFeatureId}
+                >
                   <div className="timeline-record-year"><span>{yearLabel(event)}</span><i aria-hidden="true" /></div>
                   <div className="timeline-record-main">
                     <div className="timeline-record-meta"><span>{event.period || 'Period not specified'}</span><span>{event.region || 'Region not specified'}</span></div>
@@ -378,6 +454,8 @@ export default function TimelineMap() {
                     <div className="timeline-record-tags">
                       <span className={`timeline-confidence confidence-tag--${event.confidence}`}>{event.confidence}</span>
                       {event.datePrecision && <span className="timeline-date-precision">Date precision: {event.datePrecision}</span>}
+                      <span>{event.layerName}</span>
+                      {event.layerSubtype && <span>{event.layerSubtype}</span>}
                       <span>{event.eventType || 'Type not specified'}</span>
                       <span>{event.locationPrecision === 'none' ? 'Geography incomplete' : `Location ${event.locationPrecision}`}</span>
                       {mode === 'preview' && <span className="timeline-publication">{event.publicationStatus || 'Publication status not supplied'}</span>}
@@ -394,6 +472,7 @@ export default function TimelineMap() {
                           <div><dt>Verification</dt><dd>{event.verificationStatus || 'Not specified'}</dd></div>
                           <div><dt>Date precision</dt><dd>{event.datePrecision || 'Not supplied'}</dd></div>
                           {event.locationName && <div><dt>Location name</dt><dd>{event.locationName}</dd></div>}
+                          {event.linkedMapFeatureId && <div><dt>Linked map feature</dt><dd>{event.linkedMapFeatureId}</dd></div>}
                           <div><dt>Location precision</dt><dd>{event.locationPrecision}</dd></div>
                           {mode === 'preview' && <div><dt>Publication</dt><dd>{event.publicationStatus || 'Not specified'}</dd></div>}
                         </dl>

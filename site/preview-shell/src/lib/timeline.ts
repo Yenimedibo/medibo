@@ -24,6 +24,10 @@ export type TimelineGeometry = {
 export type TimelineEvent = {
   id: string;
   originalEventId?: string;
+  layerId: string;
+  layerName: string;
+  layerSubtype: string;
+  linkedMapFeatureId?: string;
   title: string;
   startYear: number | null;
   endYear?: number | null;
@@ -43,6 +47,14 @@ export type TimelineEvent = {
   geometry?: TimelineGeometry;
 };
 
+export type TimelineLayer = {
+  id: string;
+  name: string;
+  defaultVisible: boolean;
+  sortOrder: number;
+  description?: string;
+};
+
 export type TimelineContext = {
   year: number | null;
   title: string;
@@ -53,6 +65,8 @@ export type TimelineResponse = {
   status: 'ready' | 'disconnected' | 'no-approved-data' | 'error';
   lastSyncedAt: string | null;
   refreshSeconds: number;
+  layers: TimelineLayer[];
+  selectedLayerIds: string[];
   events: TimelineEvent[];
   context: TimelineContext[];
   methodology: TimelineSource[];

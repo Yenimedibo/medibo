@@ -117,6 +117,30 @@
 
 .timeline-filters { align-self: start; border-left: 1px solid var(--tm-rule); padding-left: clamp(1rem, 2.5vw, 1.6rem); }
 .timeline-filter-head { margin-bottom: 1.3rem; }
+.timeline-layer-fieldset { min-width: 0; margin: 0 0 1.15rem; padding: 0; border: 0; }
+.timeline-layer-fieldset legend { margin-bottom: .25rem; color: var(--tm-ink); font: 650 .82rem/1.4 var(--sans, ui-sans-serif, sans-serif); }
+.timeline-layer-help, .timeline-layer-empty { margin: 0 0 .7rem; color: var(--tm-muted); font: .75rem/1.5 var(--sans, ui-sans-serif, sans-serif); }
+.timeline-layer-list { display: grid; gap: .45rem; }
+.timeline-layer-switch {
+  display: flex; align-items: center; gap: .7rem; width: 100%; min-height: 52px; padding: .55rem .6rem;
+  border: 1px solid var(--tm-rule); background: #f8f4eb; color: var(--tm-ink); text-align: left;
+  font: inherit; cursor: pointer; touch-action: manipulation;
+}
+.timeline-layer-switch:hover { border-color: var(--tm-ink); }
+.timeline-layer-switch:focus-visible { outline: 3px solid var(--tm-blue); outline-offset: 2px; }
+.timeline-layer-switch-track {
+  position: relative; flex: none; width: 2.35rem; height: 1.3rem; border: 1px solid #53565a; border-radius: 999px;
+  background: #e2ddd2; transition: background-color .16s ease;
+}
+.timeline-layer-switch-track > span {
+  position: absolute; top: .14rem; left: .14rem; width: .92rem; height: .92rem; border-radius: 50%;
+  background: #3e4247; transition: transform .16s ease;
+}
+.timeline-layer-switch.is-on .timeline-layer-switch-track { background: #27385f; border-color: #27385f; }
+.timeline-layer-switch.is-on .timeline-layer-switch-track > span { background: #fff; transform: translateX(1.03rem); }
+.timeline-layer-switch-copy { display: grid; gap: .15rem; min-width: 0; }
+.timeline-layer-switch-copy strong { color: var(--tm-ink); font: 650 .75rem/1.35 var(--sans, ui-sans-serif, sans-serif); }
+.timeline-layer-switch-copy small { color: var(--tm-muted); font: .68rem/1.4 var(--sans, ui-sans-serif, sans-serif); }
 .timeline-year-fields { display: grid; grid-template-columns: 1fr auto 1fr; gap: .5rem; align-items: end; margin-bottom: 1rem; }
 .timeline-year-fields label, .timeline-select-label { display: grid; gap: .4rem; color: var(--tm-muted); font: 600 .74rem/1.4 var(--sans, sans-serif); }
 .timeline-year-fields > span { padding-bottom: .75rem; color: var(--tm-muted); font: .75rem var(--sans, sans-serif); }
