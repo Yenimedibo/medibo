@@ -76,6 +76,7 @@ function booleanValue(value) {
   return undefined;
 }
 function isLayerPublic(record) {
+  if (status(field(record, ['Layer Status'])) !== 'active') return false;
   if (isRejected(record)) return false;
   const review = status(field(record, ['Layer Review Status', 'Review Status']));
   if (review && !['approved', 'reviewed', 'verified'].includes(review)) return false;
@@ -93,7 +94,7 @@ export function parseMapLayers(values, { preview = false } = {}) {
   for (const [index, record] of records(values).entries()) {
     if (preview ? isRejected(record) : !isLayerPublic(record)) continue;
     const id = safeText(field(record, ['Map Layer ID', 'Layer ID', 'ID']), 100);
-    const name = safeText(field(record, ['Layer Name', 'Display Name', 'Name', 'Label', 'Title']), 200);
+    const name = safeText(field(record, ['Visitor Label', 'Layer Name', 'Display Name', 'Name', 'Label', 'Title']), 200);
     if (!id || !name || seen.has(status(id))) continue;
     seen.add(status(id));
     const explicitDefault = booleanValue(field(record, [

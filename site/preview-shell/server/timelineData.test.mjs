@@ -18,7 +18,24 @@ const EVENT_HEADERS = [
   'Map Feature Ready', 'Map Layer ID', 'Layer Subtype', 'Linked Map Feature ID',
 ];
 const SOURCE_HEADERS = ['ID', 'Source / institution', 'Coverage / use', 'URL'];
-const LAYER_HEADERS = ['Map Layer ID', 'Layer Name', 'Default Visible', 'Publication Status', 'Sort Order', 'Description'];
+const LAYER_HEADERS = [
+  'Layer ID', 'Visitor Label', 'Default Visible', 'Order', 'Included Topics',
+  'Supported Geography', 'Publication Rule', 'Research / Map Notes', 'Layer Status',
+];
+function layerRow(id, label, defaultVisible, order, layerStatus = 'Active') {
+  const values = {
+    'Layer ID': id,
+    'Visitor Label': label,
+    'Default Visible': defaultVisible,
+    Order: order,
+    'Included Topics': 'Synthetic topics only',
+    'Supported Geography': 'Synthetic geography only',
+    'Publication Rule': 'Only independently approved event records',
+    'Research / Map Notes': 'Synthetic private note; never returned by the adapter.',
+    'Layer Status': layerStatus,
+  };
+  return LAYER_HEADERS.map(header => values[header]);
+}
 const sourceTable = [
   SOURCE_HEADERS,
   ['S1', 'Synthetic academic source', 'Location and date', 'https://example.org/source-1'],
@@ -26,9 +43,9 @@ const sourceTable = [
 ];
 const layerTable = [
   LAYER_HEADERS,
-  ['historical_events', 'Historical Events', 'ON', 'Approved', 1, 'Synthetic event layer.'],
-  ['climate_disasters', 'Climate & Natural Disasters', 'OFF', 'Approved', 2, 'Synthetic climate layer.'],
-  ['trade_resources', 'Trade Routes & Resources', 'OFF', 'Approved', 3, 'Synthetic trade and resources layer.'],
+  layerRow('historical_events', 'Historical Events', 'ON', 1),
+  layerRow('climate_disasters', 'Climate & Natural Disasters', 'OFF', 2),
+  layerRow('trade_resources', 'Trade Routes & Resources', 'OFF', 3),
 ];
 const mapHeaderIndex = Object.fromEntries(EVENT_HEADERS.map((name, index) => [name, index]));
 
@@ -274,31 +291,60 @@ test('unapproved annual context and methodology stay editor-only', () => {
   assert.match(previewData.methodology[0].detail, /Unapproved/);
 });
 
-test('Map Layers tab supplies the three default switch states and filters unpublished definitions', () => {
-  const layers = parseMapLayers([
+test('actual Map Layers schema supplies visitor labels/defaults and fails closed on inactive or unknown status', () => {
+  const layerRows = [
     ...layerTable,
-    ['research_drafts', 'Research drafts', 'ON', 'Draft', 4, 'Not public.'],
-  ]);
+    layerRow('hidden_layer', 'Hidden layer', 'ON', 4, 'Hidden'),
+    layerRow('retired_layer', 'Retired layer', 'ON', 5, 'Retired'),
+    layerRow('unknown_layer', 'Unknown status', 'ON', 6, 'Pending'),
+    layerRow('missing_layer', 'Missing status', 'ON', 7, ''),
+  ];
+  const layers = parseMapLayers(layerRows);
   assert.deepEqual(layers.map(layer => [layer.id, layer.name, layer.defaultVisible]), [
     ['historical_events', 'Historical Events', true],
     ['climate_disasters', 'Climate & Natural Disasters', false],
     ['trade_resources', 'Trade Routes & Resources', false],
   ]);
-  assert.equal(layers.some(layer => layer.id === 'research_drafts'), false);
-  assert.equal(parseMapLayers([
-    ...layerTable,
-    ['research_drafts', 'Research drafts', 'ON', 'Draft', 4, 'Not public.'],
-  ], { preview: true }).some(layer => layer.id === 'research_drafts'), true);
+  assert.ok(['hidden_layer', 'retired_layer', 'unknown_layer', 'missing_layer']
+    .every(id => !layers.some(layer => layer.id === id)));
+
+  const workbook = {
+    events: rowsToRecords([
+      EVENT_HEADERS,
+      row({ 'Map Event ID': 'ACTIVE-RECORD', 'Map Layer ID': 'historical_events' }),
+      row({ 'Map Event ID': 'HIDDEN-RECORD', 'Map Layer ID': 'hidden_layer' }),
+      row({ 'Map Event ID': 'RETIRED-RECORD', 'Map Layer ID': 'retired_layer' }),
+      row({ 'Map Event ID': 'UNKNOWN-STATUS-RECORD', 'Map Layer ID': 'unknown_layer' }),
+      row({ 'Map Event ID': 'MISSING-STATUS-RECORD', 'Map Layer ID': 'missing_layer' }),
+    ]),
+    layers: rowsToRecords(layerRows),
+    sources: rowsToRecords(sourceTable),
+    context: [],
+    methodology: [],
+  };
+  const publicView = buildTimelineResponse({ workbook });
+  assert.deepEqual(publicView.layers.map(layer => layer.id), ['historical_events', 'climate_disasters', 'trade_resources']);
+  assert.deepEqual(publicView.events.map(event => event.id), ['ACTIVE-RECORD']);
+  assert.equal(JSON.stringify(publicView.layers).includes('Synthetic private note'), false);
+
   const editedDefaults = parseMapLayers([
     LAYER_HEADERS,
-    ['historical_events', 'Historical Events', 'OFF', 'Approved', 1, ''],
-    ['climate_disasters', 'Climate & Natural Disasters', 'ON', 'Approved', 2, ''],
-    ['trade_resources', 'Trade Routes & Resources', 'OFF', 'Approved', 3, ''],
+    layerRow('historical_events', 'History label', 'OFF', 1),
+    layerRow('climate_disasters', 'Climate label', 'ON', 2),
+    layerRow('trade_resources', 'Trade label', 'OFF', 3),
   ]);
   assert.deepEqual(editedDefaults.map(layer => [layer.id, layer.defaultVisible]), [
     ['historical_events', false],
     ['climate_disasters', true],
     ['trade_resources', false],
+  ]);
+
+  const legacyAliases = parseMapLayers([
+    ['Map Layer ID', 'Layer Name', 'Default Visibility', 'Sort Order', 'Layer Status'],
+    ['legacy_layer', 'Legacy label', 'OFF', 9, 'Active'],
+  ]);
+  assert.deepEqual(legacyAliases.map(layer => [layer.id, layer.name, layer.defaultVisible, layer.sortOrder]), [
+    ['legacy_layer', 'Legacy label', false, 9],
   ]);
 });
 
@@ -350,10 +396,10 @@ test('layer visibility filters chronology and map features for independent, comb
   assert.match(allOff.message, /no records match/i);
 });
 
-test('draft layer definitions and research rows stay out of public mode but appear in editor preview', () => {
+test('unreviewed event records stay out of public mode but appear in editor preview', () => {
   const layers = [
     ...layerTable,
-    ['research_drafts', 'Research drafts', 'ON', 'Draft', 4, 'Editor-only category.'],
+    layerRow('research_drafts', 'Research drafts', 'ON', 4, 'Active'),
   ];
   const workbook = {
     events: rowsToRecords([
@@ -374,7 +420,7 @@ test('draft layer definitions and research rows stay out of public mode but appe
     methodology: [],
   };
   const publicView = buildTimelineResponse({ workbook });
-  assert.equal(publicView.layers.some(layer => layer.id === 'research_drafts'), false);
+  assert.equal(publicView.layers.some(layer => layer.id === 'research_drafts'), true);
   assert.deepEqual(publicView.events, []);
   const editorView = buildTimelineResponse({
     workbook,
@@ -389,8 +435,8 @@ test('draft layer definitions and research rows stay out of public mode but appe
 test('new approved layer definitions become selectable without adapter changes', () => {
   const expandedLayers = [
     ...layerTable,
-    ['future_archives', 'Future archives', 'ON', 'Approved', 4, 'Synthetic future category.'],
-    ['future_hidden', 'Future hidden category', '', 'Approved', 5, 'Synthetic blank default.'],
+    layerRow('future_archives', 'Future archives', 'ON', 4),
+    layerRow('future_hidden', 'Future hidden category', '', 5),
   ];
   const parsed = parseMapLayers(expandedLayers);
   assert.equal(parsed.find(layer => layer.id === 'future_archives')?.name, 'Future archives');
