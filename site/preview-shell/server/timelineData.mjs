@@ -92,6 +92,7 @@ export function parseMapLayers(values, { preview = false } = {}) {
   const layers = [];
   const seen = new Set();
   for (const [index, record] of records(values).entries()) {
+    if (status(field(record, ['Layer Status'])) === 'retired') continue;
     if (preview ? isRejected(record) : !isLayerPublic(record)) continue;
     const id = safeText(field(record, ['Map Layer ID', 'Layer ID', 'ID']), 100);
     const name = safeText(field(record, ['Visitor Label', 'Layer Name', 'Display Name', 'Name', 'Label', 'Title']), 200);

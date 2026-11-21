@@ -307,6 +307,9 @@ test('actual Map Layers schema supplies visitor labels/defaults and fails closed
   ]);
   assert.ok(['hidden_layer', 'retired_layer', 'unknown_layer', 'missing_layer']
     .every(id => !layers.some(layer => layer.id === id)));
+  const previewLayers = parseMapLayers(layerRows, { preview: true });
+  assert.equal(previewLayers.some(layer => layer.id === 'hidden_layer'), true);
+  assert.equal(previewLayers.some(layer => layer.id === 'retired_layer'), false);
 
   const workbook = {
     events: rowsToRecords([
@@ -326,6 +329,9 @@ test('actual Map Layers schema supplies visitor labels/defaults and fails closed
   assert.deepEqual(publicView.layers.map(layer => layer.id), ['historical_events', 'climate_disasters', 'trade_resources']);
   assert.deepEqual(publicView.events.map(event => event.id), ['ACTIVE-RECORD']);
   assert.equal(JSON.stringify(publicView.layers).includes('Synthetic private note'), false);
+  const editorPreview = buildTimelineResponse({ workbook, preview: true, canPreviewDrafts: true });
+  assert.equal(editorPreview.layers.some(layer => layer.id === 'retired_layer'), false);
+  assert.equal(editorPreview.events.some(event => event.id === 'RETIRED-RECORD'), false);
 
   const editedDefaults = parseMapLayers([
     LAYER_HEADERS,
