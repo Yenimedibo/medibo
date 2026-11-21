@@ -13,7 +13,7 @@ pnpm build
 pnpm start
 ```
 
-The standalone preview defaults to port 4173; set `PORT` to override. For development use `pnpm dev`. Clerk's `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and `VITE_CLERK_PUBLISHABLE_KEY` are provisioned through Replit's managed authentication setup. Without them, protected pages and APIs fail closed; do not put these values in the repository.
+The standalone preview defaults to port 4173; set `PORT` to override. For development use `pnpm dev`. Clerk's `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and `VITE_CLERK_PUBLISHABLE_KEY` are provisioned through Replit's managed authentication setup. The client starts Clerk only when `VITE_CLERK_PUBLISHABLE_KEY` is configured. Without it, the public homepage, privacy, and account-help pages still render; protected projects show an unavailable/locked state, and protected server routes and APIs fail closed. Do not put these values in the repository.
 
 ## Google Sheets setup
 

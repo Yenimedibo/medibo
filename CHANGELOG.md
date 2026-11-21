@@ -1,3 +1,11 @@
+# 2026-11-21 — Kept public pages available without Clerk
+
+- VERIFIED — Code commit `e8ead40ff5bcc81be7b3eb4593854314bb039fe2` on `feature/timeline-map-auth` keeps Home, Privacy, account assistance, and the public not-found route independent of Clerk configuration. Clerk is initialized only when the explicit client publishable-key setting is present; a provider render error falls back to public pages or a locked protected-route message.
+- VERIFIED — Protected project links never render protected content without Clerk. Missing client configuration displays a truthful unavailable/locked state; server-side protected routes and map APIs remain fail-closed. No fake sign-in was introduced and no API enforcement changed.
+- VERIFIED — Fresh `pnpm typecheck`, `pnpm build`, `pnpm test:contracts` (**31 passed, 0 failed**), and `git diff --check` passed. Fresh isolated no-key Chromium checks rendered Home normally and showed the locked message at `/courses`; server regression checks confirmed 503 responses for protected project/API routes with Clerk server keys absent.
+- UNKNOWN — No real sign-in, provider outage, Google/email callback, or authenticated account was tested. Timeline Map source behavior was unchanged; its existing synthetic contract checks passed.
+- VERIFIED — No merge, deployment, production change, domain/DNS/access change, or `bourkia.com` modification occurred.
+
 # 2026-11-21 — Excluded retired timeline layers
 
 - VERIFIED — Code commit `2b9f567df7cf264972da812b5d43c72702b1046b` on `feature/timeline-map-auth` excludes `Retired` layers and their events from both public mode and editor preview. Public mode still admits only `Active` layers; hidden layers may be available only in editor preview.

@@ -1,6 +1,6 @@
 # The Timeline Map and project access — review handoff
 
-Code commit: `2b9f567df7cf264972da812b5d43c72702b1046b`
+Code commit: `e8ead40ff5bcc81be7b3eb4593854314bb039fe2`
 
 Branch: `feature/timeline-map-auth`
 
@@ -30,6 +30,8 @@ Draft PR: https://github.com/Yenimedibo/medibo/pull/5
 - VERIFIED — The documented Map Events header list has no historical-period field. The adapter does not infer one from `Record Type`; it returns `Unclassified`. The existing period filter therefore has no populated historical categories until an owner-approved schema mapping is provided.
 - VERIFIED — Timeline details now display date precision and location name; editor-only annual context/methodology and Methodology `Rule` text are labeled and rendered instead of being silently dropped.
 - VERIFIED — Added real Clerk sign-in/create-account UI with Google and email/password options, server enforcement for the local Courses landing, Timeline Map/API, and Workbench handoff, safe return targets, free account creation, and public account-help/privacy links. Phone OTP is not offered.
+- VERIFIED — The current code commit also keeps Home, Privacy, account assistance, and not-found pages usable without Clerk. The client initializes Clerk only when `VITE_CLERK_PUBLISHABLE_KEY` is explicitly present; a provider render error falls back to public pages or an unavailable/locked protected route. The Home project links remain local and locked when auth is not configured.
+- VERIFIED — No sign-in mock or API weakening was added. Server-side route and API enforcement is unchanged; when Clerk server configuration is missing, protected project/API endpoints return 503.
 - VERIFIED — Course entry and Reality 101 shell routes preserve allowed legacy hashes before the client sign-in flow. The existing production course, media, downloads, Workbench and privacy destinations are still live-origin handoffs; no internals or production data were copied or changed.
 - VERIFIED — No analytics, app database, cloud storage for entries, AI submission, course/Workbench/privacy rewrite, or CI workflow was added. Clerk telemetry is disabled.
 
@@ -37,7 +39,7 @@ Draft PR: https://github.com/Yenimedibo/medibo/pull/5
 
 - VERIFIED — `site/preview-shell/server/timelineData.mjs` and `server/timelineData.test.mjs` implement the schema-aligned reader, layer/default parsing, public/editor filtering, source lookup, field validation, and synthetic integration tests.
 - VERIFIED — `site/preview-shell/src/pages/TimelineMap.{tsx,css}` and `src/lib/timeline.ts` render dynamic layer switches, apply selected layers to map/list/filter data, and retain the existing date/location precision and editor-only methodology behavior.
-- VERIFIED — `src/App.tsx`, `src/components/{AuthPages,ProjectAccessLink,LiveDestination,Shell}`, `src/lib/access*`, `server/previewApp.mjs`, `server/clerkProxyMiddleware.mjs`, `server.mjs`, `compatibility.mjs`, and the Vite/standalone tests implement auth, handoffs and routing.
+- VERIFIED — `src/App.tsx`, `src/components/{AuthPages,ProjectAccessLink,LiveDestination,Shell}`, `src/lib/{access*,ClerkConfiguration,authRouting*}`, `server/previewApp.mjs`, `server/clerkProxyMiddleware.mjs`, `server.mjs`, `compatibility.mjs`, and the Vite/standalone tests implement auth, handoffs and routing.
 - VERIFIED — `site/preview-shell/package.json` and `pnpm-lock.yaml` add the required server/auth/map dependencies; `site/preview-shell/README.md`, `CHANGELOG.md`, and this handoff record the setup and limits.
 - VERIFIED — Original course, Workbench, privacy, media, downloads, storage namespaces, current production configuration, other artifacts and CI branch were not edited.
 
@@ -47,6 +49,7 @@ Draft PR: https://github.com/Yenimedibo/medibo/pull/5
 - UNKNOWN — The workbook may exceed the bounded ranges `Map Events A1:AK2500`, `Map Layers A1:Z200`, `Master Timeline A4:D1531`, `Sources A1:D200`, or `Methodology A1:B100`. Confirm bounds before relying on complete coverage.
 - VERIFIED — The documented Map Events schema has no dedicated historical-period column; records remain `Unclassified` rather than using `Record Type` as an unverified substitute.
 - UNKNOWN — No successful sign-in, account creation, Google provider callback, persistent session, or post-login browser session was exercised. The visible Google/email choices are the Clerk UI, not evidence that provider settings are complete. Enable/configure Google in the managed Clerk settings before claiming it works.
+- VERIFIED — In a fresh local Vite preview with the client Clerk key unset, Chromium rendered the Home heading and all five project slides without a Clerk provider. Directly opening `/courses` showed the locked “Sign-in is unavailable” state, not course content. The configured-provider outage fallback is implemented but was not tested against an actual Clerk outage.
 - VERIFIED — `/courses`, `/timeline-map`, `/api/timeline-map`, and `/workbench` are server-protected. Course and Reality 101 direct entry uses a noindex shell plus the real client Clerk flow to retain hash routes; the shell contains no course or episode content. This cannot restrict direct access to the existing public production course, episodes or downloads without changing bourkia.com.
 - VERIFIED — The disconnected response intentionally contains no events. The map has no historical claims to validate until approved data is connected. Natural Earth geography is a modern reference basemap, not a historical-boundary dataset.
 - VERIFIED — The existing Replit `artifacts/medibo: web` workflow still serves the separate current artifact. This branch was exercised on an isolated local Vite/standalone preview; it has not been installed into or substituted for the registered artifact preview.
@@ -54,11 +57,12 @@ Draft PR: https://github.com/Yenimedibo/medibo/pull/5
 
 ## 5. Validation performed
 
-- VERIFIED — At code commit `2b9f567df7cf264972da812b5d43c72702b1046b`, `pnpm typecheck`, `pnpm build`, `pnpm test:contracts` (**28 passed, 0 failed**) and `git diff --check` passed. The Vite build transformed 143 modules.
+- VERIFIED — At code commit `e8ead40ff5bcc81be7b3eb4593854314bb039fe2`, fresh `pnpm typecheck`, `pnpm build`, `pnpm test:contracts` (**31 passed, 0 failed**) and `git diff --check` passed. The Vite build transformed 145 modules.
+- VERIFIED — With `VITE_CLERK_PUBLISHABLE_KEY` unset in a fresh isolated development preview, Chromium confirmed the complete public Home rendered and direct `/courses` access reached the unavailable/locked state. With the two Clerk server keys unset in isolated HTTP tests, `/` returned HTML with 200 while `/courses`, `/timeline-map`, `/workbench`, and the protected map API routes returned 503 with `noindex`.
 - VERIFIED — The Timeline Map test suite covers the actual nine-column Map Layers header, Visitor Label/default/order mapping, strict Layer Status behavior including retired-layer exclusion in editor preview, draft event visibility, AI–AK source mapping, exact approval and geography rules, source-ID resolution and unsafe URLs, filters across selected layers, all-off behavior, future categories and event assignment, missing credentials, geometry validation, and remote-geometry non-fetch.
 - VERIFIED — Fresh isolated Chromium testing at the previous UI code commit `e2cc114fdfefe3f74748b2d57bcc4421c7aaf972` used only synthetic API fixtures and a temporary local component harness: the three defaults rendered as `true/false/false`; independent and combined selections updated map markers and chronology together; Space toggled a focused switch without losing focus; all switches off produced zero visible records and markers; a 390px viewport had 390px document width with no horizontal overflow. No new browser test was needed for this server-schema-only correction.
 - VERIFIED — A fresh isolated HTTP/browser smoke confirmed Home returns 200 and renders the personal Home shell; `/timeline-map` redirects to sign-in with `returnTo=/timeline-map`; the signed-out map API returns 401; Workbench redirects to sign-in; Privacy handoff and public account-help routes behave as expected. The sign-in DOM displayed Google/email options and the noindex metadata.
-- UNKNOWN — Browser checks did not authenticate, read real user/browser storage, inspect private records, or contact Google Sheets. The earlier sign-in smoke cited above belongs to the prior code commit and is not a newly repeated authentication check. No production redirect was followed.
+- UNKNOWN — Browser checks did not authenticate, read real user/browser storage, inspect private records, or contact Google Sheets. Earlier sign-in and map UI smoke reports belong to prior commits and are not newly repeated authentication checks. No production redirect was followed.
 
 ## 6. Recommended next reviewer / stop
 
