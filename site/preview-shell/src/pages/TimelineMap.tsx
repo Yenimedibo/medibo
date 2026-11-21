@@ -377,6 +377,7 @@ export default function TimelineMap() {
                     <p className="timeline-record-description">{event.description}</p>
                     <div className="timeline-record-tags">
                       <span className={`timeline-confidence confidence-tag--${event.confidence}`}>{event.confidence}</span>
+                      {event.datePrecision && <span className="timeline-date-precision">Date precision: {event.datePrecision}</span>}
                       <span>{event.eventType || 'Type not specified'}</span>
                       <span>{event.locationPrecision === 'none' ? 'Geography incomplete' : `Location ${event.locationPrecision}`}</span>
                       {mode === 'preview' && <span className="timeline-publication">{event.publicationStatus || 'Publication status not supplied'}</span>}
@@ -391,6 +392,8 @@ export default function TimelineMap() {
                       <div className="timeline-details" id={`details-${event.id}`}>
                         <dl>
                           <div><dt>Verification</dt><dd>{event.verificationStatus || 'Not specified'}</dd></div>
+                          <div><dt>Date precision</dt><dd>{event.datePrecision || 'Not supplied'}</dd></div>
+                          {event.locationName && <div><dt>Location name</dt><dd>{event.locationName}</dd></div>}
                           <div><dt>Location precision</dt><dd>{event.locationPrecision}</dd></div>
                           {mode === 'preview' && <div><dt>Publication</dt><dd>{event.publicationStatus || 'Not specified'}</dd></div>}
                         </dl>
@@ -412,10 +415,10 @@ export default function TimelineMap() {
         <section className="timeline-context" aria-labelledby="timeline-context-title">
           <div>
             <p className="timeline-label">Reference</p>
-            <h2 id="timeline-context-title">Approved Master Timeline context</h2>
+            <h2 id="timeline-context-title">{mode === 'preview' ? 'Editor-only Master Timeline context' : 'Approved Master Timeline context'}</h2>
           </div>
           <details>
-            <summary>Sources and Methodology</summary>
+            <summary>{mode === 'preview' ? 'Editor-only sources and methodology' : 'Sources and Methodology'}</summary>
             <div className="timeline-context-content">
               {response?.context?.length ? (
                 <ul className="timeline-context-list">
@@ -426,15 +429,20 @@ export default function TimelineMap() {
                     </li>
                   ))}
                 </ul>
-              ) : <p className="timeline-context-empty">No approved Master Timeline context was returned.</p>}
+              ) : <p className="timeline-context-empty">{mode === 'preview' ? 'No editor-preview Master Timeline context was returned.' : 'No approved Master Timeline context was returned.'}</p>}
               <div className="timeline-methodology">
-                <h3>Sources and Methodology</h3>
+                <h3>{mode === 'preview' ? 'Editor-only methodology' : 'Sources and Methodology'}</h3>
                 {response?.methodology?.length ? (
                   <ul>{response.methodology.map((source, index) => {
                     const href = safeSourceUrl(source.url);
-                    return <li key={`${source.label}-${index}`}>{href ? <a href={href} target="_blank" rel="noreferrer">{source.label || href}</a> : <span>{source.label || 'Source label not supplied'}</span>}</li>;
+                    return (
+                      <li key={`${source.label}-${index}`}>
+                        {href ? <a href={href} target="_blank" rel="noreferrer">{source.label || href}</a> : <span>{source.label || 'Source label not supplied'}</span>}
+                        {source.detail && <p>{source.detail}</p>}
+                      </li>
+                    );
                   })}</ul>
-                ) : <p className="timeline-context-empty">No Sources and Methodology entries were returned.</p>}
+                ) : <p className="timeline-context-empty">{mode === 'preview' ? 'No editor-preview methodology was returned.' : 'No Sources and Methodology entries were returned.'}</p>}
               </div>
             </div>
           </details>

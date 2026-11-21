@@ -1,267 +1,256 @@
-import { GoogleAuth } from 'google-auth-library';
-
+// Medibo Timeline Map — schema-aligned, read-only Sheets adapter.
+// This module deliberately does not fabricate events, map geometry, or publication approvals.
 const SPREADSHEET_ID = '1gSvwciQg_rz-5vBO_Ohih4jG773WBONgZpshgvNnKnc';
 const REFRESH_MS = 60_000;
 const ERROR_CACHE_MS = 15_000;
 const READ_SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
-const RANGES = {
-  events: "'Map Events'!A:ZZ",
-  context: "'Master Timeline'!A:ZZ",
-  methodology: "'Sources and Methodology'!A:ZZ",
-};
+export const SHEET_RANGES = Object.freeze({
+  events: "'Map Events'!A1:AH2500",
+  context: "'Master Timeline'!A4:D1531",
+  sources: "'Sources'!A1:D200",
+  methodology: "'Methodology'!A1:B100",
+});
 
 let cachedWorkbook = null;
 let cachedAt = 0;
-let cachedError = null;
+let cachedError = false;
 let errorCachedAt = 0;
 let inFlight = null;
-let authClient;
+let authClient = null;
 
-function normalizeKey(value) {
-  return String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+function key(value) { return String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+function status(value) { return String(value ?? '').trim().toLowerCase(); }
+function safeText(value, limit = 4000) { return String(value ?? '').trim().slice(0, limit); }
+function safeUrl(value) {
+  try {
+    const url = new URL(safeText(value, 2000));
+    return (url.protocol === 'https:' || url.protocol === 'http:') ? url.href : undefined;
+  } catch { return undefined; }
 }
-
-function normalizeStatus(value) {
-  return String(value ?? '').trim().toLowerCase();
-}
-
-function recordValue(record, aliases) {
-  for (const alias of aliases) {
-    const value = record[normalizeKey(alias)];
-    if (value !== undefined && value !== null && String(value).trim() !== '') return value;
+function field(record, names) {
+  for (const name of names) {
+    const v = record[key(name)];
+    if (v !== undefined && v !== null && String(v).trim() !== '') return v;
   }
   return '';
 }
-
 function parseYear(value) {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return Number.isInteger(value) ? value : null;
-  }
-  const text = String(value ?? '').trim();
-  if (!text) return null;
-  const match = text.match(/(-?\d[\d,]*)/);
-  if (!match) return null;
-  const year = Number(match[1].replaceAll(',', ''));
-  if (!Number.isSafeInteger(year)) return null;
-  return /\b(?:BCE|BC)\b/i.test(text) ? -Math.abs(year) : year;
+  if (typeof value === 'number') return Number.isSafeInteger(value) ? value : null;
+  const s = String(value ?? '').trim();
+  if (!s) return null;
+  const m = /^(\d{1,4})(?:\s*(?:CE|AD))?$/i.exec(s);
+  if (!m) return null; // Broad periods must use explicit numeric start/end year columns.
+  const n = Number(m[1]);
+  return Number.isSafeInteger(n) ? n : null;
 }
-
-function rowsToRecords(values) {
-  if (!Array.isArray(values) || values.length < 2 || !Array.isArray(values[0])) return [];
-  const headers = values[0].map(normalizeKey);
-  return values.slice(1).map((row, index) => {
-    const record = {};
-    headers.forEach((header, index) => {
-      if (header) record[header] = Array.isArray(row) ? row[index] ?? '' : '';
-    });
-    record.__rowNumber = index + 2;
+function validYear(start, end) {
+  return Number.isInteger(start) && start >= 500 && start <= 2026 &&
+    (end === null || (Number.isInteger(end) && end >= start && end <= 2026));
+}
+export function rowsToRecords(rows) {
+  if (!Array.isArray(rows) || rows.length < 2 || !Array.isArray(rows[0])) return [];
+  const headers = rows[0].map(key);
+  return rows.slice(1).map((row, index) => {
+    const record = { __rowNumber: index + 2 };
+    for (let col = 0; col < headers.length; col++) {
+      if (headers[col]) record[headers[col]] = Array.isArray(row) ? (row[col] ?? '') : '';
+    }
     return record;
   });
 }
+function records(input) {
+  if (!Array.isArray(input) || input.length === 0) return [];
+  return Array.isArray(input[0]) ? rowsToRecords(input) : input;
+}
 
-function containsStatus(status, expression) {
-  return expression.test(normalizeStatus(status));
+function buildSourceIndex(sourceRecords) {
+  const out = new Map();
+  for (const source of records(sourceRecords)) {
+    const id = safeText(field(source, ['ID', 'source ID']), 100);
+    if (!id) continue;
+    const label = safeText(field(source, ['Source / institution', 'source', 'title', 'name']), 500);
+    const url = safeUrl(field(source, ['URL', 'link']));
+    if (label) out.set(key(id), { label: `${id} — ${label}`, ...(url ? { url } : {}) });
+  }
+  return out;
+}
+function resolveSources(record, sourceIndex) {
+  const raw = safeText(field(record, ['Sources', 'references', 'citations']), 8000);
+  if (!raw) return { sources: [], allResolved: false };
+  const groups = raw.split(/[;\n|]/).map(value => value.trim()).filter(Boolean);
+  const items = groups.flatMap((value) => {
+    if (sourceIndex.has(key(value)) || safeUrl(value)) return [value];
+    const commaSeparatedIds = value.split(',').map(part => part.trim()).filter(Boolean);
+    return commaSeparatedIds.length > 1 && commaSeparatedIds.every(id => sourceIndex.has(key(id)))
+      ? commaSeparatedIds
+      : [value];
+  }).slice(0, 30);
+  const result = [];
+  let allResolved = items.length > 0;
+  for (const value of items) {
+    const source = sourceIndex.get(key(value));
+    if (source) result.push(source);
+    else {
+      const url = safeUrl(value);
+      if (url) result.push({ label: value, url });
+      else { result.push({ label: safeText(value, 500) }); allResolved = false; }
+    }
+  }
+  return { sources: result, allResolved };
 }
 
 function isRejected(record) {
-  const statuses = [
-    recordValue(record, ['review status']),
-    recordValue(record, ['research status']),
-    recordValue(record, ['publication status']),
-    recordValue(record, ['status']),
-  ];
-  return statuses.some((value) => containsStatus(value, /\b(rejected|removed|deleted|withdrawn)\b/));
+  return ['Review Status', 'Publication Status'].some(name =>
+    /\b(?:rejected|withdrawn|archived|deleted)\b/.test(status(field(record, [name]))));
 }
-
-function isPublicRecord(record) {
-  if (isRejected(record)) return false;
-  const review = recordValue(record, ['review status', 'research review status']);
-  const publication = recordValue(record, ['publication status', 'publish status']);
-  const confidence = recordValue(record, ['confidence', 'confidence level', 'historical confidence']);
-  return (
-    containsStatus(review, /\b(approved|verified|fact checked|fact-checked)\b/) &&
-    containsStatus(publication, /\b(approved|published|public|live)\b/) &&
-    ![review, publication].some((value) => containsStatus(value, /\b(draft|pending|private|disputed)\b/)) &&
-    !containsStatus(confidence, /\b(disputed|contested)\b/)
-  );
+function isPublicCandidate(record) {
+  return !isRejected(record) &&
+    status(field(record, ['Evidence Status'])) === 'fully checked' &&
+    status(field(record, ['Review Status'])) === 'reviewed' &&
+    status(field(record, ['Publication Status'])) === 'approved' &&
+    status(field(record, ['Public Event Ready'])) === 'yes';
 }
-
-function isEditorPreviewRecord(record) {
-  if (isRejected(record)) return false;
-  return Object.values(record).some((value) => String(value ?? '').trim() !== '');
+function isPreviewCandidate(record) {
+  return !isRejected(record) && Boolean(field(record, ['Map Event ID', 'Original Event ID', 'Start Year', 'Event / Development']));
 }
-
-function safeText(value, max = 4000) {
-  return String(value ?? '').trim().slice(0, max);
-}
-
-function safeUrl(value) {
-  try {
-    const url = new URL(String(value ?? '').trim());
-    return ['https:', 'http:'].includes(url.protocol) ? url.href.slice(0, 2000) : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function parseSources(record) {
-  const raw = recordValue(record, ['sources', 'source', 'references', 'citations']);
-  if (!raw) return [];
-  let entries;
-  if (Array.isArray(raw)) entries = raw;
-  else {
-    const text = String(raw).trim();
-    try {
-      const parsed = JSON.parse(text);
-      entries = Array.isArray(parsed) ? parsed : [parsed];
-    } catch {
-      entries = text.split(/\n|;|\s*\|\s*/);
-    }
-  }
-  return entries
-    .map((entry) => {
-      if (typeof entry === 'string') {
-        const url = safeUrl(entry);
-        return { label: safeText(entry, 500), ...(url ? { url } : {}) };
-      }
-      if (!entry || typeof entry !== 'object') return null;
-      const label = safeText(entry.label ?? entry.title ?? entry.name ?? entry.source, 500);
-      const url = safeUrl(entry.url ?? entry.href ?? entry.link);
-      return label ? { label, ...(url ? { url } : {}) } : null;
-    })
-    .filter(Boolean)
-    .slice(0, 30);
-}
-
-function validCoordinatePair(value) {
-  return (
-    Array.isArray(value) &&
-    value.length >= 2 &&
-    Number.isFinite(Number(value[0])) &&
-    Number.isFinite(Number(value[1])) &&
-    Number(value[0]) >= -180 &&
-    Number(value[0]) <= 180 &&
-    Number(value[1]) >= -90 &&
-    Number(value[1]) <= 90
-  );
-}
-
-function validCoordinates(value, depth = 0) {
-  if (depth > 5 || !Array.isArray(value) || value.length === 0) return false;
-  if (validCoordinatePair(value)) return true;
-  return value.every((child) => validCoordinates(child, depth + 1));
-}
-
-function parseGeometry(value) {
-  let geometry = value;
-  if (typeof value === 'string') {
-    try {
-      geometry = JSON.parse(value);
-    } catch {
-      return null;
-    }
-  }
-  if (geometry?.type === 'Feature') geometry = geometry.geometry;
-  const allowed = new Set(['Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon']);
-  if (!geometry || !allowed.has(geometry.type) || !validCoordinates(geometry.coordinates)) return null;
-  return { type: geometry.type, coordinates: geometry.coordinates };
-}
-
 function confidenceFor(record) {
-  const value = normalizeStatus(recordValue(record, ['confidence', 'confidence level', 'historical confidence']));
-  if (/\b(disputed|contested)\b/.test(value)) return 'disputed';
-  if (/\b(approximate|estimated|circa|uncertain)\b/.test(value)) return 'approximate';
-  if (/\b(verified|confirmed|corroborated)\b/.test(value)) return 'verified';
+  if (status(field(record, ['Date Precision'])) === 'disputed') return 'disputed';
+  const value = status(field(record, ['Confidence']));
+  if (/disputed|contested/.test(value)) return 'disputed';
+  if (/approximate|medium|estimated|circa|uncertain/.test(value)) return 'approximate';
+  if (/high|verified|confirmed|corroborated/.test(value)) return 'verified';
   return 'incomplete';
 }
-
-function toTimelineEvent(record, index, editorPreview) {
-  let startYear = parseYear(recordValue(record, ['start year', 'start date', 'year', 'date']));
-  let endYear = parseYear(recordValue(record, ['end year', 'end date']));
-  let confidence = confidenceFor(record);
-  const verificationStatus = safeText(recordValue(record, ['review status', 'research status', 'verification status', 'status']) || 'Not specified', 200);
-  const publicationStatus = safeText(recordValue(record, ['publication status', 'publish status']) || 'Not specified', 200);
-  if (startYear === null || (endYear !== null && startYear !== null && endYear < startYear)) {
-    confidence = 'incomplete';
-    if (startYear !== null && endYear !== null && endYear < startYear) {
-      startYear = null;
-      endYear = null;
-    }
+function validPoint(coords) {
+  return Array.isArray(coords) && coords.length === 2 &&
+    coords.every(n => typeof n === 'number' && Number.isFinite(n)) &&
+    coords[0] >= -180 && coords[0] <= 180 && coords[1] >= -90 && coords[1] <= 90;
+}
+function validLine(value) {
+  return Array.isArray(value) && value.length >= 2 && value.every(validPoint);
+}
+function validRing(value) {
+  if (!Array.isArray(value) || value.length < 4 || !value.every(validPoint)) return false;
+  const first = value[0];
+  const last = value[value.length - 1];
+  return first[0] === last[0] && first[1] === last[1];
+}
+function validPolygon(value) {
+  return Array.isArray(value) && value.length > 0 && value.every(validRing);
+}
+function parseGeometry(value) {
+  if (!value || typeof value !== 'string' || value.length > 200_000) return null;
+  // Geometry ID/URL is metadata; no arbitrary remote URL fetching or unverified GeoJSON.
+  let geo;
+  try { geo = JSON.parse(value); } catch { return null; }
+  if (geo?.type === 'Feature') geo = geo.geometry;
+  const valid = {
+    Point: validPoint(geo?.coordinates),
+    MultiPoint: Array.isArray(geo?.coordinates) && geo.coordinates.length > 0 && geo.coordinates.every(validPoint),
+    LineString: validLine(geo?.coordinates),
+    MultiLineString: Array.isArray(geo?.coordinates) && geo.coordinates.length > 0 && geo.coordinates.every(validLine),
+    Polygon: validPolygon(geo?.coordinates),
+    MultiPolygon: Array.isArray(geo?.coordinates) && geo.coordinates.length > 0 && geo.coordinates.every(validPolygon),
+  };
+  if (!geo || !Object.hasOwn(valid, geo.type) || !valid[geo.type]) return null;
+  return { type: geo.type, coordinates: geo.coordinates };
+}
+function verifiedGeography(record, startYear) {
+  if (startYear === null || status(field(record, ['Map Feature Ready'])) !== 'yes' ||
+      status(field(record, ['Map Placement Status'])) !== 'ready' ||
+      status(field(record, ['Location Accuracy'])) !== 'exact') return {};
+  const type = status(field(record, ['Feature Type']));
+  if (type === 'point') {
+    const latitudeValue = field(record, ['Latitude']);
+    const longitudeValue = field(record, ['Longitude']);
+    if (String(latitudeValue).trim() === '' || String(longitudeValue).trim() === '') return {};
+    const latitude = Number(latitudeValue);
+    const longitude = Number(longitudeValue);
+    if (!validPoint([longitude, latitude])) return {};
+    return { latitude, longitude, locationPrecision: 'verified' };
   }
-
-  const latitudeValue = recordValue(record, ['latitude', 'lat']);
-  const longitudeValue = recordValue(record, ['longitude', 'lon', 'lng']);
-  const rawLatitude = String(latitudeValue).trim() ? Number(latitudeValue) : Number.NaN;
-  const rawLongitude = String(longitudeValue).trim() ? Number(longitudeValue) : Number.NaN;
-  const hasValidPair =
-    Number.isFinite(rawLatitude) && rawLatitude >= -90 && rawLatitude <= 90 &&
-    Number.isFinite(rawLongitude) && rawLongitude >= -180 && rawLongitude <= 180;
-  const coordinateStatus = normalizeStatus(recordValue(record, ['coordinate verification', 'coordinate status', 'location precision']));
-  const shapeStatus = normalizeStatus(recordValue(record, ['geometry verification', 'shape status', 'boundary status']));
-  const candidateGeometry = parseGeometry(recordValue(record, ['geometry', 'geojson', 'geographic shape', 'shape']));
-  const verifiedCoordinates = hasValidPair && /\b(verified|confirmed|exact)\b/.test(coordinateStatus);
-  const disputedBoundary = confidence === 'disputed' && ['Polygon', 'MultiPolygon'].includes(candidateGeometry?.type);
-  const verifiedGeometry = candidateGeometry && !disputedBoundary && /\b(verified|confirmed|exact)\b/.test(shapeStatus);
-  const hasApproximateLocation = hasValidPair || candidateGeometry;
-  const locationPrecision = verifiedCoordinates || verifiedGeometry
-    ? 'verified'
-    : hasApproximateLocation
-      ? 'approximate'
-      : 'none';
-
-  const latitude = verifiedCoordinates ? rawLatitude : undefined;
-  const longitude = verifiedCoordinates ? rawLongitude : undefined;
-  const geometry = verifiedGeometry ? candidateGeometry : undefined;
-  const id = safeText(recordValue(record, ['id', 'event id', 'record id']) || `sheet-row-${record.__rowNumber ?? index + 2}`, 200);
-  const title = safeText(recordValue(record, ['title', 'event', 'event title', 'name']), 400);
-  const description = safeText(recordValue(record, ['description', 'summary', 'details', 'event description']), 8000);
-  if (!title) return null;
-  if (editorPreview && startYear === null) confidence = 'incomplete';
-
+  if (['territory', 'route', 'area'].includes(type)) {
+    const geometry = parseGeometry(field(record, ['Geometry ID / URL']));
+    if (!geometry) return {}; // URL/ID backed geometry needs a separately verified loader.
+    if (geometry.type === 'Point' || geometry.type === 'MultiPoint') return {};
+    return { geometry, locationPrecision: 'verified' };
+  }
+  return {};
+}
+function datePrecisionValid(record) {
+  return ['exact year', 'approximate year', 'year range', 'century', 'disputed'].includes(
+    status(field(record, ['Date Precision'])));
+}
+function toEvent(record, index, preview, sourceIndex) {
+  const originalId = safeText(field(record, ['Original Event ID']), 160);
+  const id = safeText(field(record, ['Map Event ID', 'Event ID', 'ID']) ||
+    (preview ? `draft-row-${record.__rowNumber ?? index + 2}` : ''), 200);
+  const start = parseYear(field(record, ['Start Year']));
+  const endRaw = field(record, ['End Year']);
+  const end = String(endRaw).trim() === '' ? null : parseYear(endRaw);
+  const datesValid = validYear(start, end) && !(String(endRaw).trim() !== '' && end === null);
+  const explicitTitle = safeText(field(record, ['Event Title']), 400);
+  const description = safeText(field(record, ['Event / Development']), 8000);
+  const resolved = resolveSources(record, sourceIndex);
+  const title = explicitTitle || (preview ? `Unreviewed record ${id || originalId}` : '');
+  if (!id || !title) return null;
+  if (!preview && (!datesValid || !datePrecisionValid(record) || !description || !resolved.allResolved || !resolved.sources.length)) return null;
+  const validStart = datesValid ? start : null;
+  const confidence = confidenceFor(record);
+  const where = verifiedGeography(record, validStart);
+  const rawLatitude = field(record, ['Latitude']);
+  const rawLongitude = field(record, ['Longitude']);
+  const hasApproximatePoint = String(rawLatitude).trim() !== '' && String(rawLongitude).trim() !== '' &&
+    validPoint([Number(rawLongitude), Number(rawLatitude)]);
+  const approximateLocation = status(field(record, ['Location Accuracy'])) === 'approximate' &&
+    (hasApproximatePoint || Boolean(field(record, ['Geometry ID / URL'])));
   return {
-    id,
-    title,
-    startYear,
-    ...(endYear !== null ? { endYear } : {}),
-    region: safeText(recordValue(record, ['region', 'area', 'geographic region']) || 'Unclassified', 200),
-    eventType: safeText(recordValue(record, ['event type', 'category', 'type']) || 'Unclassified', 200),
-    period: safeText(recordValue(record, ['historical period', 'period', 'era']) || 'Unclassified', 200),
+    id, ...(originalId ? { originalEventId: originalId } : {}),
+    title, startYear: validStart,
+    ...(datesValid && end !== null ? { endYear: end } : {}),
+    region: safeText(field(record, ['Region']) || 'Unclassified', 200),
+    eventType: safeText(field(record, ['Event Type']) || 'Unclassified', 200),
+    period: safeText(field(record, ['Historical Period']) || 'Unclassified', 200),
     description,
-    sources: parseSources(record),
+    sources: resolved.sources,
     confidence,
-    verificationStatus,
-    publicationStatus,
-    locationPrecision,
-    ...(latitude !== undefined && longitude !== undefined ? { latitude, longitude } : {}),
-    ...(geometry ? { geometry } : {}),
+    verificationStatus: safeText(`${field(record, ['Evidence Status']) || 'Unassessed'} / ${field(record, ['Review Status']) || 'Needs review'}`, 200),
+    publicationStatus: safeText(field(record, ['Publication Status']) || 'Draft', 200),
+    datePrecision: safeText(field(record, ['Date Precision']) || 'Unassessed', 100),
+    locationName: safeText(field(record, ['Location Name']), 300),
+    locationPrecision: where.locationPrecision || (approximateLocation ? 'approximate' : 'none'),
+    ...(where.latitude !== undefined ? { latitude: where.latitude, longitude: where.longitude } : {}),
+    ...(where.geometry ? { geometry: where.geometry } : {}),
   };
 }
-
-function toContext(records, editorPreview) {
-  return records
-    .filter((record) => editorPreview ? isEditorPreviewRecord(record) : isPublicRecord(record))
-    .map((record) => ({
-      year: parseYear(recordValue(record, ['year', 'start year', 'date'])),
-      title: safeText(recordValue(record, ['title', 'period', 'topic', 'event']), 400),
-      summary: safeText(recordValue(record, ['summary', 'context', 'description', 'notes']), 4000),
-    }))
-    .filter((item) => item.title || item.summary)
-    .slice(0, 2000);
+export function parseTimelineRows(values, { preview = false, sources = [] } = {}) {
+  const sourceIndex = buildSourceIndex(sources);
+  const seenIds = new Set();
+  const out = [];
+  for (const [index, rec] of records(values).entries()) {
+    if (preview ? !isPreviewCandidate(rec) : !isPublicCandidate(rec)) continue;
+    const event = toEvent(rec, index, preview, sourceIndex);
+    if (!event || seenIds.has(event.id)) continue; // Reject duplicate Map Event IDs rather than merge claims.
+    seenIds.add(event.id);
+    out.push(event);
+  }
+  return out;
 }
-
-function toMethodology(records, editorPreview) {
-  return records
-    .filter((record) => editorPreview ? isEditorPreviewRecord(record) : isPublicRecord(record))
-    .map((record) => {
-      const label = safeText(recordValue(record, ['title', 'name', 'source', 'methodology']), 500);
-      if (!label) return null;
-      const url = safeUrl(recordValue(record, ['url', 'link', 'source url']));
-      return { label, ...(url ? { url } : {}) };
-    })
-    .filter(Boolean)
-    .slice(0, 1000);
+function previewContext(contextRecords, preview, from, to) {
+  if (!preview) return []; // The annual Master Timeline has no per-row public approval metadata.
+  return records(contextRecords).map(rec => ({
+    year: parseYear(field(rec, ['Year'])),
+    title: 'Morocco — unreviewed annual context',
+    summary: safeText(field(rec, ['Morocco — Events']), 4000),
+  })).filter(x => x.year !== null && x.year >= from && x.year <= to && x.summary).slice(0, 1500);
 }
-
+function previewMethodology(methodologyRecords, preview) {
+  if (!preview) return []; // Unpublished methodology is not automatically public.
+  return records(methodologyRecords).map(rec => ({
+    label: safeText(field(rec, ['Field']), 100),
+    detail: safeText(field(rec, ['Rule']), 2000),
+  })).filter(x => x.label).slice(0, 100);
+}
 function accountFromEnvironment() {
   const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   if (!raw) return { status: 'missing' };
@@ -269,33 +258,26 @@ function accountFromEnvironment() {
     const credentials = JSON.parse(raw);
     if (!credentials.client_email || !credentials.private_key) return { status: 'invalid' };
     return { status: 'ready', credentials };
-  } catch {
-    return { status: 'invalid' };
-  }
+  } catch { return { status: 'invalid' }; }
 }
-
 async function googleValues(range) {
   const account = accountFromEnvironment();
-  if (account.status !== 'ready') throw new Error('Google Sheets credentials are not configured correctly.');
+  if (account.status !== 'ready') throw new Error('Google Sheets service account not configured.');
   if (!authClient) {
+    const { GoogleAuth } = await import('google-auth-library');
     authClient = new GoogleAuth({ credentials: account.credentials, scopes: [READ_SCOPE] });
   }
   const client = await authClient.getClient();
   const token = await client.getAccessToken();
-  if (!token?.token) throw new Error('Google Sheets authorization is unavailable.');
-  const url = new URL(
-    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(SPREADSHEET_ID)}/values/${encodeURIComponent(range)}`,
-  );
+  if (!token?.token) throw new Error('Google Sheets authorization failed.');
+  const url = new URL(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}`);
   url.searchParams.set('majorDimension', 'ROWS');
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token.token}` },
-    signal: AbortSignal.timeout(12_000),
-  });
-  if (!response.ok) throw new Error('Google Sheets returned an unsuccessful response.');
-  const data = await response.json();
-  return rowsToRecords(data.values);
+  url.searchParams.set('valueRenderOption', 'UNFORMATTED_VALUE');
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${token.token}` }, signal: AbortSignal.timeout(12_000) });
+  if (!response.ok) throw new Error(`Google Sheets read failed (${response.status}).`);
+  const payload = await response.json();
+  return rowsToRecords(payload.values || []);
 }
-
 async function loadWorkbook() {
   const account = accountFromEnvironment();
   if (account.status === 'missing') return { status: 'disconnected' };
@@ -305,114 +287,76 @@ async function loadWorkbook() {
   if (cachedError && now - errorCachedAt < ERROR_CACHE_MS) return { status: 'error' };
   if (inFlight) return inFlight;
   inFlight = Promise.all([
-    googleValues(RANGES.events),
-    googleValues(RANGES.context),
-    googleValues(RANGES.methodology),
-  ])
-    .then(([events, context, methodology]) => {
-      cachedWorkbook = { events, context, methodology, lastSyncedAt: new Date().toISOString() };
-      cachedAt = Date.now();
-      cachedError = null;
-      return { status: 'ready', workbook: cachedWorkbook };
-    })
-    .catch(() => {
-      cachedError = true;
-      errorCachedAt = Date.now();
-      return { status: 'error' };
-    })
-    .finally(() => {
-      inFlight = null;
-    });
+    googleValues(SHEET_RANGES.events),
+    googleValues(SHEET_RANGES.context),
+    googleValues(SHEET_RANGES.sources),
+    googleValues(SHEET_RANGES.methodology),
+  ]).then(([events, context, sources, methodology]) => {
+    cachedWorkbook = { events, context, sources, methodology, lastSyncedAt: new Date().toISOString() };
+    cachedAt = Date.now();
+    cachedError = false;
+    return { status: 'ready', workbook: cachedWorkbook };
+  }).catch(() => {
+    cachedError = true;
+    errorCachedAt = Date.now();
+    return { status: 'error' };
+  }).finally(() => { inFlight = null; });
   return inFlight;
 }
-
-function queryYear(value, fallback) {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed >= 500 && parsed <= 2026 ? parsed : fallback;
+function rangeYear(value, fallback) {
+  const n = Number(value);
+  return Number.isSafeInteger(n) && n >= 500 && n <= 2026 ? n : fallback;
 }
-
-function matchesFilters(event, filters) {
-  const { from, to, region, topic, period } = filters;
-  if (event.startYear !== null && (event.startYear > to || (event.endYear ?? event.startYear) < from)) return false;
-  if (region && event.region.toLowerCase() !== region) return false;
-  if (topic && event.eventType.toLowerCase() !== topic) return false;
-  if (period && event.period.toLowerCase() !== period) return false;
+function matches(event, { from, to, region, topic, period }) {
+  if (event.startYear === null) return from === 500 && to === 2026; // No misleading year-specific draft placement.
+  if (event.startYear > to || (event.endYear ?? event.startYear) < from) return false;
+  if (region && status(event.region) !== region) return false;
+  if (topic && status(event.eventType) !== topic) return false;
+  if (period && status(event.period) !== period) return false;
   return true;
 }
-
-export function parseTimelineRows(values, { preview = false } = {}) {
-  return rowsToRecords(values)
-    .filter((record) => preview ? isEditorPreviewRecord(record) : isPublicRecord(record))
-    .map((record, index) => toTimelineEvent(record, index, preview))
-    .filter(Boolean);
+export function buildTimelineResponse({ workbook, query = {}, preview = false, canPreviewDrafts = false }) {
+  const from = rangeYear(query.from, 500);
+  const to = rangeYear(query.to, 2026);
+  const filters = {
+    from, to,
+    region: status(query.region), topic: status(query.topic), period: status(query.period),
+  };
+  const eventsAll = parseTimelineRows(workbook.events, { preview, sources: workbook.sources });
+  const events = from <= to ? eventsAll.filter(e => matches(e, filters)) : [];
+  return {
+    status: eventsAll.length ? 'ready' : 'no-approved-data',
+    lastSyncedAt: workbook.lastSyncedAt ?? null,
+    refreshSeconds: REFRESH_MS / 1000,
+    events,
+    context: previewContext(workbook.context, preview, from, to),
+    methodology: previewMethodology(workbook.methodology, preview),
+    canPreviewDrafts,
+    message: eventsAll.length === 0
+      ? (preview ? 'No research records are available in the editor preview.' : 'No approved and fully reviewed events are published yet.')
+      : events.length === 0 ? 'No records match the selected year range and filters.' : '',
+  };
 }
-
 export function resetTimelineCacheForTests() {
   cachedWorkbook = null;
   cachedAt = 0;
-  cachedError = null;
+  cachedError = false;
   errorCachedAt = 0;
   inFlight = null;
   authClient = null;
 }
-
 export async function getTimelineResponse({ userId, query = {} }) {
-  const editorIds = new Set(
-    String(process.env.MEDIBO_EDITOR_USER_IDS ?? '')
-      .split(',')
-      .map((id) => id.trim())
-      .filter(Boolean),
-  );
+  const editorIds = new Set(String(process.env.MEDIBO_EDITOR_USER_IDS ?? '').split(',').map(x => x.trim()).filter(Boolean));
   const canPreviewDrafts = Boolean(userId && editorIds.has(userId));
-  const mode = query.mode === 'preview' ? 'preview' : 'public';
-  if (mode === 'preview' && !canPreviewDrafts) return { status: 403 };
-
+  const preview = query.mode === 'preview';
+  if (preview && !canPreviewDrafts) return { status: 403 };
   const loaded = await loadWorkbook();
-  const base = {
-    lastSyncedAt: loaded.workbook?.lastSyncedAt ?? null,
-    refreshSeconds: REFRESH_MS / 1000,
-    events: [],
-    context: [],
-    methodology: [],
-    canPreviewDrafts,
+  if (loaded.status === 'disconnected' || loaded.status === 'error') return {
+    status: loaded.status, lastSyncedAt: null, refreshSeconds: REFRESH_MS / 1000,
+    events: [], context: [], methodology: [], canPreviewDrafts,
+    message: loaded.status === 'disconnected'
+      ? 'The private spreadsheet connection is not configured for this staging server.'
+      : 'The spreadsheet could not be read. Check the service-account credential and Viewer sharing.',
   };
-  if (loaded.status === 'disconnected') {
-    return {
-      ...base,
-      status: 'disconnected',
-      message: 'The private spreadsheet connection is not configured for this staging server.',
-    };
-  }
-  if (loaded.status !== 'ready') {
-    return {
-      ...base,
-      status: 'error',
-      message: 'The spreadsheet could not be read. Check the server-side credential and read access.',
-    };
-  }
-
-  const preview = mode === 'preview';
-  const allEvents = parseTimelineRows(loaded.workbook.events, { preview });
-  const filters = {
-    from: queryYear(query.from, 500),
-    to: queryYear(query.to, 2026),
-    region: String(query.region ?? '').trim().toLowerCase(),
-    topic: String(query.topic ?? '').trim().toLowerCase(),
-    period: String(query.period ?? '').trim().toLowerCase(),
-  };
-  const events = allEvents.filter((event) => matchesFilters(event, filters));
-  return {
-    ...base,
-    status: allEvents.length === 0 ? 'no-approved-data' : 'ready',
-    events,
-    context: toContext(loaded.workbook.context, preview),
-    methodology: toMethodology(loaded.workbook.methodology, preview),
-    message: allEvents.length === 0
-      ? preview
-        ? 'No research records are available in this editor preview.'
-        : 'No approved and published historical records are available yet.'
-      : events.length === 0
-        ? 'No records match the selected year range and filters.'
-        : '',
-  };
+  return buildTimelineResponse({ workbook: loaded.workbook, query, preview, canPreviewDrafts });
 }

@@ -7,6 +7,7 @@ export type HistoricalConfidence =
 export type TimelineSource = {
   label: string;
   url?: string;
+  detail?: string;
 };
 
 export type TimelineGeometry = {
@@ -22,9 +23,12 @@ export type TimelineGeometry = {
 
 export type TimelineEvent = {
   id: string;
+  originalEventId?: string;
   title: string;
   startYear: number | null;
   endYear?: number | null;
+  datePrecision?: string;
+  locationName?: string;
   region: string;
   eventType: string;
   period: string;

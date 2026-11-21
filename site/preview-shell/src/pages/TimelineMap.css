@@ -153,6 +153,7 @@
 .timeline-record-description { max-width: 49rem; margin: 0; color: #414653; font-size: .98rem; line-height: 1.6; }
 .timeline-record-tags { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: .85rem; color: #404552; font-size: .7rem; line-height: 1.4; }
 .timeline-record-tags > span:not(:first-child) { border-left: 1px solid var(--tm-rule); padding-left: .55rem; }
+.timeline-date-precision { font-weight: 650; }
 .timeline-confidence { text-transform: capitalize; font-weight: 700; letter-spacing: .02em; }
 .confidence-tag--verified { color: #244638; }.confidence-tag--approximate { color: #58420e; }.confidence-tag--disputed { color: #762b21; }.confidence-tag--incomplete { color: #414653; }
 .timeline-publication { color: #4c2c1c; font-weight: 650; }
@@ -202,6 +203,7 @@
 .timeline-context-list p, .timeline-context-empty { margin: 0; color: var(--tm-muted); font: .82rem/1.55 var(--sans, ui-sans-serif, sans-serif); }
 .timeline-methodology { margin-top: 1rem; padding-top: .9rem; border-top: 1px solid var(--tm-rule); }
 .timeline-methodology ul { margin: .35rem 0 0; padding-left: 1.1rem; color: var(--tm-muted); font: .82rem/1.55 var(--sans, ui-sans-serif, sans-serif); }
+.timeline-methodology li p { margin: .15rem 0 .4rem; color: var(--tm-muted); font: inherit; }
 .timeline-methodology a { color: #26375f; text-underline-offset: 3px; overflow-wrap: anywhere; }
 .timeline-methodology a:hover { color: var(--tm-red); }
 
