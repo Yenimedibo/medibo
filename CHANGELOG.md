@@ -1,3 +1,13 @@
+# 2026-11-21 — Private Timeline Map and project access
+
+- VERIFIED — Code commit `d489f34fe7f9e01e3ed0c304a84796e9b986cbb8` is on the separate local branch `feature/timeline-map-auth`, based on PR #4 head `cc01cc0b2ed0b193f16283742a5a501ec035be9c`. PR #2, the CI branch/PR, PR #4, `main`, the existing Replit artifact and bourkia.com were not changed.
+- VERIFIED — Added a Natural Earth 110m reference map, 500–2026 year controls, filters, event/source details, uncertainty labels, and verified-point/shape rendering. The basemap is explicitly identified as modern reference geography, not historical borders. No historical records or locations were invented.
+- VERIFIED — Added a read-only server-side Sheets reader for the three named tabs, with explicit approval/publication filtering, an editor-ID allowlist, 60-second refresh, coordinate/geometry validation, and honest disconnected/error/empty states. The spreadsheet was not accessed; the integration was dismissed and no successful sync is claimed.
+- VERIFIED — Added Clerk-based Google/email sign-in UI, server-protected project/API routes, safe return-target validation, free account creation, public account help/privacy, and course/Reality hash preservation. Public course/media/downloads on bourkia.com remain public and unchanged.
+- VERIFIED — Fresh `pnpm typecheck`, `pnpm build`, and `pnpm test:contracts` passed; **18 tests passed** using synthetic rows. Fresh isolated 390px browser checks covered project sign-in, course/episode hashes, keyboard menu focus, reduced motion, event details, filters, and a synthetic year/location edit that moved the map marker. No browser errors were observed.
+- UNKNOWN — No successful provider login, real spreadsheet authorization/sync, owner editor-role setup, full course/Workbench parity, or production deployment has been validated. The registered Replit artifact workflow still serves its existing separate artifact; this branch was tested in an isolated local preview.
+- PROPOSED — Keep this staging-only. Review the separate feature branch before any merge; do not deploy, publish, change domains/access, or modify bourkia.com.
+
 # 2026-11-01 — Bounded small-text contrast correction
 
 - VERIFIED — Code commit `d0c61830fd276cebc670c2081bb4559915e80b58` changes only two CSS tokens on the existing presentation branch/PR #4: muted ink `#7d7f86` → `#565963` and rust `#b4472a` → `#9c3b23`. No content, typography, layout, routes or controls changed.
