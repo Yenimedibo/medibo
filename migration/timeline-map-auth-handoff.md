@@ -5,7 +5,9 @@ Code commit: `d489f34fe7f9e01e3ed0c304a84796e9b986cbb8`
 Branch: `feature/timeline-map-auth`
 
 Base: `cc01cc0b2ed0b193f16283742a5a501ec035be9c` (`presentation/editorial-project-slides`)
-Status: local staging branch; draft PR not yet published
+Status: draft PR #5 open, unmerged
+
+Draft PR: https://github.com/Yenimedibo/medibo/pull/5
 
 ## 1. What I inspected
 
@@ -51,5 +53,5 @@ Status: local staging branch; draft PR not yet published
 ## 6. Recommended next reviewer / stop
 
 - PROPOSED — Claude reviews server/auth boundaries, spreadsheet status semantics and data minimization. Gemini reviews phone layout, map controls and accessible interaction. ChatGPT reconciles feedback against the existing branch protections; the owner decides whether provider/workbook setup is approved.
-- PROPOSED — If creating a stacked draft PR, target `presentation/editorial-project-slides`, the exact base of this branch. Targeting the older `implementation/portable-website-shell` branch would include the unmerged PR #4 presentation commits in the diff.
+- VERIFIED — Draft PR #5 targets `presentation/editorial-project-slides`, the exact base of this branch. Targeting the older `implementation/portable-website-shell` branch would include the unmerged PR #4 presentation commits in the diff.
 - VERIFIED — No production deployment is recommended. Keep this as private staging; do not merge, publish, change access/domain/DNS, or modify bourkia.com.
