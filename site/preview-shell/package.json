@@ -5,22 +5,34 @@
   "type": "module",
   "packageManager": "pnpm@10.11.0",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "CLERK_TELEMETRY_DISABLED=true vite --host 0.0.0.0",
     "typecheck": "tsc --noEmit",
     "build": "pnpm typecheck && vite build",
-    "start": "node server.mjs",
-    "test:contracts": "MEDIBO_DOWNLOAD_MANIFEST=../../content/downloads.observed.json node --test compatibility.test.mjs server.test.mjs vite.test.mjs"
+    "start": "CLERK_TELEMETRY_DISABLED=true node server.mjs",
+    "test:contracts": "CLERK_TELEMETRY_DISABLED=true MEDIBO_DOWNLOAD_MANIFEST=../../content/downloads.observed.json node --test compatibility.test.mjs server.test.mjs vite.test.mjs server/timelineData.test.mjs src/lib/access.test.mjs"
   },
   "dependencies": {
+    "@clerk/express": "^2.1.96",
+    "@clerk/react": "^6.19.4",
+    "@clerk/shared": "^4.48.3",
+    "d3-geo": "^3.1.2",
+    "express": "^5.3.0",
+    "google-auth-library": "^11.3.4",
+    "http-proxy-middleware": "^4.2.2",
     "lucide-react": "0.545.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "topojson-client": "^3.1.0",
+    "world-atlas": "^2.0.2",
     "wouter": "3.13.0"
   },
   "devDependencies": {
+    "@types/d3-geo": "^3.1.1",
+    "@types/express": "^5.0.6",
     "@types/node": "25.9.9",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "@types/topojson-client": "^3.1.5",
     "@vitejs/plugin-react": "5.2.0",
     "typescript": "5.9.3",
     "vite": "7.3.7"

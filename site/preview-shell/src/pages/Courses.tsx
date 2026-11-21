@@ -1,5 +1,6 @@
 import { PageHead } from '../components/Shell';
 import { LIVE } from '../components/links';
+import { ProjectAccessLink } from '../components/ProjectAccessLink';
 
 type Course = {
   id: string; title: string; subtitle: string; href: string;
@@ -37,9 +38,9 @@ export default function Courses() {
                 {c.facts.map((f) => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}
               </dl>
               <div className="course__actions">
-                <a href={c.href} className="cta" data-testid={`link-course-${c.id}`}>
+                <ProjectAccessLink href={c.href} className="cta" data-testid={`link-course-${c.id}`}>
                   Open the course <span aria-hidden="true">→</span>
-                </a>
+                </ProjectAccessLink>
                 {c.downloads.map((d) => (
                   <a key={d.href} href={d.href} className="dl" lang={d.lang} dir={d.dir} data-testid={`link-download-${c.id}-${d.lang}`}>
                     {d.label}

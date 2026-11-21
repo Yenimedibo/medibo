@@ -1,5 +1,10 @@
 /** Preview-only handoffs. No course, media, or user-data payloads are proxied. */
 export const PRODUCTION_ORIGIN = "https://bourkia.com";
+const courseEntryPaths = new Set(["/talk-to-ai", "/courses/talk-to-ai"]);
+
+export function isCourseEntryPath(pathname) {
+  return courseEntryPaths.has(pathname.replace(/\/+$/, "") || "/");
+}
 
 export function productionHandoff(rawUrl) {
   const url = new URL(rawUrl, "http://preview.invalid");
@@ -45,12 +50,28 @@ export function handoffMiddleware(req, res, next) {
 }
 
 export function compatibilityPlugin() {
+  const isWorkbenchPath = (req) => {
+    try {
+      return /^\/workbench\/?$/.test(new URL(req.url || "/", "http://preview.invalid").pathname);
+    } catch {
+      return false;
+    }
+  };
+  const isProtectedEntryPath = (req) => {
+    try {
+      return isWorkbenchPath(req) ||
+        isCourseEntryPath(new URL(req.url || "/", "http://preview.invalid").pathname);
+    } catch {
+      return false;
+    }
+  };
   function installBeforeConnect(server) {
     const middleware = server.middlewares;
     const handle = middleware.handle;
     // Connect parses req.url before its first .use() callback. Guard at entry,
     // otherwise malformed absolute targets can throw before our middleware.
     middleware.handle = function (req, res, next) {
+      if (isProtectedEntryPath(req)) return handle.call(middleware, req, res, next);
       return handoffMiddleware(req, res, () => handle.call(middleware, req, res, next));
     };
   }

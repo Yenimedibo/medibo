@@ -33,20 +33,26 @@ test("standalone HTTP server survives malformed GET/HEAD targets", async () => {
         assert.equal(result.body, method === "HEAD" ? "" : "Bad request.");
       }
     }
-    const healthy = await get("/courses");
-    assert.equal(healthy.status, 200);
-    assert.match(healthy.body, /noindex, nofollow/);
+    const home = await get("/");
+    assert.equal(home.status, 200);
+    assert.match(home.body, /noindex, nofollow/);
   });
 });
 
-test("standalone HTTP handoffs preserve live features, course and all downloads", async () => {
+test("course-entry shells preserve hash handling and all 45 download handoffs", async () => {
   const manifest = JSON.parse(await readFile(process.env.MEDIBO_DOWNLOAD_MANIFEST, "utf8"));
-  const paths = new Set(["/talk-to-ai", "/courses/talk-to-ai/", "/workbench", "/workbench/", "/privacy", "/privacy/"]);
+  const paths = new Set();
   for (const entry of manifest.entries) {
     paths.add(entry.path);
     paths.add(entry.observed_final_path);
   }
   await withServer(async get => {
+    for (const path of ["/talk-to-ai", "/talk-to-ai/", "/courses/talk-to-ai", "/courses/talk-to-ai/", "/reality-101"]) {
+      const result = await get(path);
+      assert.equal(result.status, 200, path);
+      assert.equal(result.headers["x-robots-tag"], "noindex, nofollow");
+      assert.match(result.headers["content-type"], /text\/html/);
+    }
     for (const path of paths) {
       for (const method of ["GET", "HEAD"]) {
         const result = await get(`${path}?fixture=synthetic`, method);
@@ -55,9 +61,23 @@ test("standalone HTTP handoffs preserve live features, course and all downloads"
         assert.equal(result.headers["x-robots-tag"], "noindex, nofollow");
       }
     }
-    for (const path of ["/workbench", "/privacy"]) {
+    for (const path of ["/workbench", "/workbench/", "/privacy", "/privacy/"]) {
       const result = await get(path, "POST");
       assert.equal(result.status, 405);
     }
+  });
+});
+
+test("project entries fail closed behind the real auth provider", async () => {
+  await withServer(async get => {
+    for (const path of ["/courses", "/timeline-map", "/workbench"]) {
+      const result = await get(path);
+      assert.ok([307, 503].includes(result.status), `${path} returned ${result.status}`);
+      assert.equal(result.headers["x-robots-tag"], "noindex, nofollow");
+      if (result.status === 307) assert.match(result.headers.location, /^\/sign-in\?returnTo=/);
+    }
+    const mapApi = await get("/api/timeline-map");
+    assert.ok([401, 503].includes(mapApi.status));
+    assert.equal(mapApi.headers["x-robots-tag"], "noindex, nofollow");
   });
 });

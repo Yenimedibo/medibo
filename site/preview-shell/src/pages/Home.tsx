@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { Link } from 'wouter';
 import { EPISODES, LIVE } from '../components/links';
+import { ProjectAccessLink } from '../components/ProjectAccessLink';
 import { Slides } from '../components/Slides';
 import { EPISODE_INFO } from './Reality';
 
@@ -19,7 +19,7 @@ const SLIDES = [
             <div><dt>Languages</dt><dd>English + Darija</dd></div>
           </dl>
           <p>Free to read and download. No payment, no enrollment.</p>
-          <Link href="/courses" className="slide__link" data-testid="link-slide-courses">See the courses <span aria-hidden="true">→</span></Link>
+          <ProjectAccessLink href="/courses" className="slide__link" data-testid="link-slide-courses">See the courses <span aria-hidden="true">→</span></ProjectAccessLink>
         </div>
       </article>
     ),
@@ -34,7 +34,7 @@ const SLIDES = [
           <p className="slide__lead">We inherit explanations before we learn how to question them.</p>
           <p>Reality 101 is my ongoing attempt to slow down, separate observation from interpretation, and follow reality wherever it leads.</p>
           <blockquote className="slide__quote">No model is reality—not even Reality 101.</blockquote>
-          <Link href="/reality-101" className="slide__link" data-testid="link-slide-reality">Watch the episodes <span aria-hidden="true">→</span></Link>
+          <ProjectAccessLink href="/reality-101" className="slide__link" data-testid="link-slide-reality">Watch the episodes <span aria-hidden="true">→</span></ProjectAccessLink>
         </div>
       </article>
     ),
@@ -50,7 +50,21 @@ const SLIDES = [
             <li>Capture claims</li><li>Formalize hypotheses</li><li>Log evidence</li><li>Expose every assumption</li>
           </ol>
           <p>Capture claims, formalize hypotheses, log evidence, and expose every assumption. Your entries stay in this browser.</p>
-          <a href={LIVE.workbench} className="slide__link" data-testid="link-slide-workbench">Open the Workbench <span aria-hidden="true">→</span></a>
+          <ProjectAccessLink href={LIVE.workbench} className="slide__link" data-testid="link-slide-workbench">Open the Workbench <span aria-hidden="true">→</span></ProjectAccessLink>
+        </div>
+      </article>
+    ),
+  },
+  {
+    key: 'timeline-map', label: 'Investigate — The Timeline Map',
+    content: (
+      <article className="slide">
+        <p className="slide__verb">Investigate</p>
+        <h3 className="slide__title">The Timeline Map</h3>
+        <div className="slide__body">
+          <p className="slide__lead">A historical record that keeps sources, geography and uncertainty visible.</p>
+          <p>Events belong on a map only when their location is supported. Other records remain in the chronology.</p>
+          <ProjectAccessLink href="/timeline-map" className="slide__link" data-testid="link-slide-timeline-map">Open the map <span aria-hidden="true">→</span></ProjectAccessLink>
         </div>
       </article>
     ),
@@ -117,7 +131,7 @@ export default function Home() {
           <h2 id="work-title" className="h2">Four ways in</h2>
         </div>
         <div id="shop">
-          <Slides slides={SLIDES} label="Four ways in" />
+          <Slides slides={SLIDES} label="Four projects and an unnamed teaser" />
         </div>
       </section>
 
@@ -129,11 +143,11 @@ export default function Home() {
         <ul className="eplist">
           {EPISODES.map((e) => (
             <li key={e.n}>
-              <Link href={`/reality-101#episode-${e.n}`} className="eplist__item" data-testid={`link-episode-${e.n}`}>
+              <ProjectAccessLink href={`/reality-101#episode-${e.n}`} className="eplist__item" data-testid={`link-episode-${e.n}`}>
                 <span className="eplist__n">{String(e.n).padStart(2, '0')}</span>
                 <span>{EPISODE_INFO[e.n]?.title ?? e.label}</span>
                 <span className="eplist__go">{EPISODE_INFO[e.n]?.duration} · Watch</span>
-              </Link>
+              </ProjectAccessLink>
             </li>
           ))}
         </ul>
