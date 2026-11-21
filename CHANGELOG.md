@@ -1,3 +1,13 @@
+# 2026-11-21 — Corrected Timeline Map spreadsheet integration
+
+- VERIFIED — Code commit `f94e00c76e222727cd582b5e87a2e4982139efd3` replaces the prior broad-alias adapter/tests on `feature/timeline-map-auth`. Draft PR #5 remains the target; no merge, deploy, publish, DNS/domain/access change, or production edit occurred.
+- VERIFIED — Integrated the supplied schema-specific, bounded, read-only reader for `Map Events`, `Master Timeline`, `Sources`, and `Methodology`; enforced the documented evidence/review/publication/readiness fields; resolved source IDs without exposing the source catalog; and kept unapproved context/methodology editor-only.
+- VERIFIED — Added safe source reference parsing, stricter inline GeoJSON validation, date/location precision display, editor-only methodology details, and synthetic checks for approval, source links, filters, draft preview, and marker eligibility.
+- VERIFIED — The correction package’s listed Map Events headers do not include a historical-period field. The adapter does not infer one from `Record Type`; records stay `Unclassified` until an owner-approved mapping exists.
+- VERIFIED — Fresh `pnpm typecheck`, `pnpm build`, and `pnpm test:contracts` passed (**24 tests, 0 failed**). Signed-out HTTP/browser smoke showed public Home, sign-in redirect/return target for Timeline Map, expected API denial, Google/email options, and noindex.
+- UNKNOWN — The package handoff reports an earlier authorized Google Drive schema inspection, but this session did not access the workbook or verify service-account sync. Clerk sign-in was not completed with a real authorized test account.
+- PROPOSED — Keep PR #5 draft and verify actual sheet bounds/headers and owner-managed authentication settings when available. No production deployment is recommended.
+
 # 2026-11-21 — Private Timeline Map and project access
 
 - VERIFIED — Code commit `d489f34fe7f9e01e3ed0c304a84796e9b986cbb8` is on `feature/timeline-map-auth`, based on PR #4 head `cc01cc0b2ed0b193f16283742a5a501ec035be9c`. Draft PR #5 is open against that same branch. PR #2, the CI branch/PR, PR #4, `main`, the existing Replit artifact and bourkia.com were not changed.
