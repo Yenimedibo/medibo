@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { useAuth, useClerk } from '@clerk/react';
 import { Link, useLocation } from 'wouter';
 import { LIVE } from './links';
 import { ProjectAccessLink } from './ProjectAccessLink';
@@ -12,11 +11,19 @@ const NAV = [
   { href: LIVE.workbench, label: 'Workbench' },
 ];
 
-export function Shell({ children }: { children: ReactNode }) {
+type ShellAuthState = 'none' | 'loading' | 'signed-out' | 'signed-in';
+
+export function Shell({
+  children,
+  authState = 'none',
+  onSignOut,
+}: {
+  children: ReactNode;
+  authState?: ShellAuthState;
+  onSignOut?: () => void;
+}) {
   const [loc] = useLocation();
   const [open, setOpen] = useState(false);
-  const { isLoaded, isSignedIn } = useAuth();
-  const { signOut } = useClerk();
   const previousLocation = useRef(loc);
 
   useEffect(() => {
@@ -87,11 +94,16 @@ export function Shell({ children }: { children: ReactNode }) {
               const active = n.href === '/' ? loc === '/' : n.href.startsWith('https://')
                 ? loc.startsWith('/workbench')
                 : loc.startsWith(n.href);
-              const LinkComponent = n.href === '/' ? Link : ProjectAccessLink;
+              const href = authState === 'none' && n.href.startsWith('https://') ? '/workbench' : n.href;
+              const LinkComponent = n.href === '/'
+                ? Link
+                : authState === 'none'
+                  ? Link
+                  : ProjectAccessLink;
               return (
                 <LinkComponent
                   key={n.href}
-                  href={n.href}
+                  href={href}
                   className="nav__link"
                   aria-current={active ? 'page' : undefined}
                   data-testid={`link-nav-${n.label.toLowerCase().replace(/\s/g, '-')}`}
@@ -101,10 +113,11 @@ export function Shell({ children }: { children: ReactNode }) {
                 </LinkComponent>
               );
             })}
-            {isLoaded && (
-              isSignedIn
-                ? <button className="nav__link nav__account" type="button" onClick={() => void signOut({ redirectUrl: '/' })} data-testid="button-sign-out">Sign out</button>
-                : <Link href="/sign-in?returnTo=%2F" className="nav__link nav__account" data-testid="link-sign-in"><span className="nav__num">+</span>Sign in</Link>
+            {authState === 'signed-in' && onSignOut && (
+              <button className="nav__link nav__account" type="button" onClick={onSignOut} data-testid="button-sign-out">Sign out</button>
+            )}
+            {authState === 'signed-out' && (
+              <Link href="/sign-in?returnTo=%2F" className="nav__link nav__account" data-testid="link-sign-in"><span className="nav__num">+</span>Sign in</Link>
             )}
           </nav>
         </div>

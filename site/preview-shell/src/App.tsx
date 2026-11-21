@@ -1,12 +1,14 @@
-import { ClerkProvider, useAuth } from '@clerk/react';
+import { ClerkProvider, useAuth, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
-import { useEffect, type ReactNode } from 'react';
+import { Component, useEffect, type ReactNode } from 'react';
 import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import { AuthContinuePage, AccountHelpPage, SignInPage, SignUpPage } from './components/AuthPages';
 import { LiveDestination } from './components/LiveDestination';
 import { Shell } from './components/Shell';
 import { LIVE } from './components/links';
 import { safeReturnTarget, signInPath } from './lib/access';
+import { appRouteMode } from './lib/authRouting.mjs';
+import { ClerkConfigurationContext } from './lib/ClerkConfiguration';
 import Courses from './pages/Courses';
 import Home from './pages/Home';
 import NotFound from './pages/NotFound';
@@ -27,15 +29,11 @@ const initialCourseHash = ['/talk-to-ai', '/courses/talk-to-ai'].includes(
 const initialRealityHash = (initialRoutePath.replace(/\/+$/, '') || '/') === '/reality-101'
   ? window.location.hash
   : '';
-const clerkPubKey = publishableKeyFromHost(
-  window.location.hostname,
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
-);
+const configuredClerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY?.trim();
+const clerkPubKey = configuredClerkPubKey
+  ? publishableKeyFromHost(window.location.hostname, configuredClerkPubKey)
+  : undefined;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
-
-if (!clerkPubKey) {
-  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in the Replit Secrets environment.');
-}
 
 const clerkAppearance = {
   theme: 'simple' as const,
@@ -117,7 +115,7 @@ function CourseHandoffRoute() {
 
 function SiteRoutes() {
   return (
-    <Shell>
+    <ClerkShell>
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/courses" component={CourseRoute} />
@@ -134,6 +132,20 @@ function SiteRoutes() {
         <Route path="/account-help" component={AccountHelpPage} />
         <Route component={NotFound} />
       </Switch>
+    </ClerkShell>
+  );
+}
+
+function ClerkShell({ children }: { children: ReactNode }) {
+  const { isLoaded, isSignedIn } = useAuth();
+  const { signOut } = useClerk();
+  const authState = !isLoaded ? 'loading' : isSignedIn ? 'signed-in' : 'signed-out';
+  return (
+    <Shell
+      authState={authState}
+      onSignOut={() => { void signOut({ redirectUrl: '/' }); }}
+    >
+      {children}
     </Shell>
   );
 }
@@ -145,7 +157,7 @@ function ProviderRoutes() {
 
   return (
     <ClerkProvider
-      publishableKey={clerkPubKey}
+      publishableKey={clerkPubKey!}
       proxyUrl={clerkProxyUrl}
       appearance={clerkAppearance}
       signInUrl={signInUrl}
@@ -164,11 +176,74 @@ function ProviderRoutes() {
   );
 }
 
+function PublicRoutes() {
+  return (
+    <ClerkConfigurationContext.Provider value={false}>
+      <Shell>
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/privacy" component={Privacy} />
+          <Route path="/privacy/" component={Privacy} />
+          <Route path="/account-help" component={AccountHelpPage} />
+          <Route component={NotFound} />
+        </Switch>
+      </Shell>
+    </ClerkConfigurationContext.Provider>
+  );
+}
+
+function AuthUnavailablePage() {
+  return (
+    <section className="account-help wrap" aria-labelledby="auth-unavailable-title">
+      <p className="kicker">Protected project</p>
+      <h1 className="pagehead__title" id="auth-unavailable-title">Sign-in is unavailable</h1>
+      <p className="prose">
+        Authentication is not configured or is temporarily unavailable. This project remains locked;
+        please try again later.
+      </p>
+    </section>
+  );
+}
+
+class ClerkAvailabilityBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
+function AppRoutes() {
+  const [location] = useLocation();
+  const mode = appRouteMode(location, Boolean(clerkPubKey));
+  if (!clerkPubKey) {
+    if (mode === 'public') return <PublicRoutes />;
+    return <Shell><AuthUnavailablePage /></Shell>;
+  }
+  const fallback = mode === 'public'
+    ? <PublicRoutes />
+    : <Shell><AuthUnavailablePage /></Shell>;
+  return (
+    <ClerkAvailabilityBoundary fallback={fallback}>
+      <ProviderRoutes />
+    </ClerkAvailabilityBoundary>
+  );
+}
+
 function App() {
   return (
-    <WouterRouter base={basePath}>
-      <ProviderRoutes />
-    </WouterRouter>
+    <ClerkConfigurationContext.Provider value={Boolean(clerkPubKey)}>
+      <WouterRouter base={basePath}>
+        <AppRoutes />
+      </WouterRouter>
+    </ClerkConfigurationContext.Provider>
   );
 }
 

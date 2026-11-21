@@ -22,6 +22,20 @@ async function withServer(run) {
   finally { await new Promise(resolve => server.close(resolve)); }
 }
 
+async function withoutClerkConfiguration(run) {
+  const keys = ["CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY"];
+  const previous = new Map(keys.map(key => [key, process.env[key]]));
+  for (const key of keys) delete process.env[key];
+  try { await run(); }
+  finally {
+    for (const key of keys) {
+      const value = previous.get(key);
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+}
+
 test("standalone HTTP server survives malformed GET/HEAD targets", async () => {
   await withServer(async get => {
     for (const path of ["//[", "http://["]) {
@@ -36,6 +50,23 @@ test("standalone HTTP server survives malformed GET/HEAD targets", async () => {
     const home = await get("/");
     assert.equal(home.status, 200);
     assert.match(home.body, /noindex, nofollow/);
+  });
+});
+
+test("missing Clerk configuration leaves the public homepage available and protected APIs closed", async () => {
+  await withoutClerkConfiguration(async () => {
+    await withServer(async get => {
+      const home = await get("/");
+      assert.equal(home.status, 200);
+      assert.match(home.headers["content-type"], /text\/html/);
+      assert.match(home.body, /id="root"/);
+
+      for (const path of ["/courses", "/timeline-map", "/workbench", "/api/timeline-map", "/api/timeline-map/access"]) {
+        const result = await get(path);
+        assert.equal(result.status, 503, `${path} returned ${result.status}`);
+        assert.match(result.headers["x-robots-tag"], /noindex/);
+      }
+    });
   });
 });
 
