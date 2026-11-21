@@ -1,6 +1,16 @@
 # Personal portfolio presentation — separate draft-review handoff
 
+Latest bounded correction: code `d0c61830fd276cebc670c2081bb4559915e80b58`
+changes only two CSS color tokens after the original presentation revision.
+Its new scoped contrast/smoke evidence is distinguished below from the original
+browser report; that report is not relabelled a full pass.
+
 ## 1. What I inspected
+
+VERIFIED — For the contrast correction: clean current presentation branch, remote
+PR #4 head `8eeadf03a3efae1626b4290d423579775a9ccb06`, both mirrored stylesheets,
+small-label selectors, alpha backgrounds/texture, and existing handoff qualification.
+No unrelated source or private browser records inspected.
 
 VERIFIED — Governance (README, constitution, collaboration protocol, changelog),
 site manifest, current Home/Shell/Courses/Reality/styles, existing feature-handoff
@@ -18,6 +28,13 @@ destinations. No private conversations, user records or Workbench document was o
 This is reconstruction using approved public copy, not an original source export.
 
 ## 2. What changed / why
+
+VERIFIED — Contrast correction `d0c61830fd276cebc670c2081bb4559915e80b58` changes
+only `--ink-3` from `#7d7f86` to `#565963` and `--oxide` from `#b4472a` to `#9c3b23`
+in the existing stylesheet. Muted text was 3.427:1 on paper, below 4.5:1 for
+normal-sized enabled text; the small rust accents also needed margin on translucent
+surfaces. The same restrained colors are darker, not a new design. Typography,
+spacing, content, controls, markup and routes are unchanged.
 
 VERIFIED — Code commit `c7a9d7d962cac800e768271ef4a996922445fc48` implements the
 owner's clarified visitor-facing scope, retaining the current Home as its starting
@@ -58,6 +75,11 @@ No control, route, style, metadata or other source changed after the browser pas
 
 ## 3. Files / sections affected
 
+Latest correction affects only `site/preview-shell/src/index.css`, mirrored into
+`artifacts/medibo/src/index.css`, plus this handoff and CHANGELOG. The rest of the
+presentation source is byte-identical to `8eeadf0`. Earlier affected files below
+describe the original presentation, not additional edits in this correction.
+
 Portable `site/preview-shell/`: `index.html`, `src/components/Shell.tsx`,
 new `src/components/Slides.tsx`, `src/index.css`, and
 `src/pages/{Home,Courses,Reality,NotFound}.tsx`.
@@ -86,6 +108,41 @@ Noindex is retained but is not authentication. The separately unmerged CI PR's
 historical passing run does not test this new presentation.
 
 ## 5. Newly performed validation
+
+### Latest contrast-only revision — newly run at d0c6183
+
+VERIFIED — Explicit `pnpm typecheck`, `pnpm build` (including the existing internal
+typecheck) and all ten `pnpm test:contracts` regressions passed at
+`d0c61830fd276cebc670c2081bb4559915e80b58`. Development workflow restarted cleanly;
+refreshed screenshots show no application browser errors.
+
+VERIFIED — Calculated WCAG sRGB relative luminance, with threshold 4.5:1:
+
+| Enabled text / surface | Ratio |
+| --- | --- |
+| Previous muted ink / paper | 3.427:1 (fails) |
+| New muted ink / paper | 5.990:1 |
+| New rust / paper | 5.875:1 |
+| Minimum of 25 conservative palette/surface checks | 4.637:1 |
+
+The 25 checks cover five author text colors on paper, alternate paper, textured
+paper and a worst-case translucent header; dark-band kicker/episode number/60%-opacity
+Watch text; and light text on dark/rust buttons. Header bound composites 92% paper
+over black, then conservatively darkens the background by the full `.08 × .35`
+texture alpha without darkening foreground text. Actual multiply texture is lighter.
+Dark-band/light button foregrounds are conservatively texture-darkened instead.
+Settled enabled text is covered, not transient animation frames or native video
+controls. Existing `aria-disabled` boundary controls are explicitly exempt;
+this is not a full WCAG conformance claim.
+
+VERIFIED — Four fresh full-page captures at that exact source, visually reviewed:
+`generated-artifacts/medibo-contrast/{home-desktop,home-390,courses,reality-101}.jpg`.
+Home widths are 1440px and 390px. Original presentation screenshots are preserved,
+not overwritten or relabelled. Arithmetic evidence:
+`generated-artifacts/medibo-contrast/contrast-results.json`; ignored local checker:
+`.local/medibo-contrast-check.mjs`.
+
+### Original presentation revision — historical evidence below
 
 VERIFIED — All results below concern the presentation revision, not historical
 browser/CI reports:

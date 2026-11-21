@@ -1,3 +1,10 @@
+# 2026-11-01 — Bounded small-text contrast correction
+
+- VERIFIED — Code commit `d0c61830fd276cebc670c2081bb4559915e80b58` changes only two CSS tokens on the existing presentation branch/PR #4: muted ink `#7d7f86` → `#565963` and rust `#b4472a` → `#9c3b23`. No content, typography, layout, routes or controls changed.
+- VERIFIED — WCAG sRGB luminance calculations: muted/paper improves 3.427:1 → 5.990:1; rust/paper is 5.875:1. Twenty-five palette/surface combinations passed 4.5:1, including conservative translucent-header/texture compositing; minimum 4.637:1. Disabled boundary controls are exempt, not misrepresented as enabled text.
+- VERIFIED — Fresh typecheck/build and all ten existing regressions passed at that code commit. Four screenshots were refreshed separately under `generated-artifacts/medibo-contrast/`, preserving the earlier evidence files.
+- VERIFIED — Protected course/Workbench/privacy/media/runtime/package/CI work is unchanged. Scoped browser smoke evidence belongs to the updated six-part presentation handoff; the original qualified browser report remains qualified. No merge, production, deployment, domain or access changes.
+
 # 2026-11-01 — Visitor-facing portfolio presentation
 
 - VERIFIED — Separate branch `presentation/editorial-project-slides` starts from PR #2 head `3adc7c6fe47f96e7230c61f4f0f369be56f91575`. Main presentation/browser-test commit: `c7a9d7d962cac800e768271ef4a996922445fc48`; final source `f0343b3e8b3470e45786e58239b7dcccf5e71846` only removes one public unfinished-project filler sentence. The separate CI branch/PR is not imported or changed.
