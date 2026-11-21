@@ -117,7 +117,7 @@ test('documented Map Events schema maps stable ID, content, date, location and r
   assert.equal(event.layerName, 'Historical Events');
   assert.equal(event.layerSubtype, 'Documented event');
   assert.equal(event.linkedMapFeatureId, 'FEATURE-TEST-1');
-  assert.equal(event.period, 'Unclassified');
+  assert.equal(event.period, '14th century CE');
   assert.deepEqual(event.sources.map(source => source.url), [
     'https://example.org/source-1',
     'https://example.org/source-2',
@@ -263,9 +263,9 @@ test('server filters events by year, region and event type using documented colu
   assert.deepEqual(acrossLayers.events.map(event => event.id), ['TRADE-MOROCCO']);
 });
 
-test('period is not inferred from Record Type when the documented event sheet has no period column', () => {
+test('century period derives from year, not the Record Type field', () => {
   const event = parse([row({ 'Record Type': 'Continuity' })])[0];
-  assert.equal(event.period, 'Unclassified');
+  assert.equal(event.period, '14th century CE');
 });
 
 test('unapproved annual context and methodology stay editor-only', () => {

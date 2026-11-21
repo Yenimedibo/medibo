@@ -1,3 +1,5 @@
+import { centuryPeriod } from './centuryPeriod.mjs';
+
 // Medibo Timeline Map — schema-aligned, read-only Sheets adapter.
 // This module deliberately does not fabricate events, map geometry, or publication approvals.
 const SPREADSHEET_ID = '1gSvwciQg_rz-5vBO_Ohih4jG773WBONgZpshgvNnKnc';
@@ -271,7 +273,7 @@ function toEvent(record, index, preview, sourceIndex, layerIndex) {
     ...(datesValid && end !== null ? { endYear: end } : {}),
     region: safeText(field(record, ['Region']) || 'Unclassified', 200),
     eventType: safeText(field(record, ['Event Type']) || 'Unclassified', 200),
-    period: safeText(field(record, ['Historical Period']) || 'Unclassified', 200),
+    period: safeText(field(record, ['Historical Period']) || centuryPeriod(validStart), 200),
     description,
     sources: resolved.sources,
     confidence,

@@ -68,7 +68,9 @@
 .timeline-map-ground { fill: #e8e4d7; }
 .timeline-graticule { fill: none; stroke: #bdb9aa; stroke-width: .7; stroke-dasharray: 2 5; opacity: .8; }
 .timeline-land { fill: #c4c8b7; stroke: #a6ab9a; stroke-width: .65; vector-effect: non-scaling-stroke; }
-.timeline-event-geometry { fill: #9c3b2322; stroke: var(--tm-red); stroke-width: 2.2; vector-effect: non-scaling-stroke; }
+.timeline-event-geometry { fill: #9c3b2322; stroke: var(--tm-red); stroke-width: 2.2; vector-effect: non-scaling-stroke; cursor: pointer; }
+.timeline-event-geometry.is-selected { stroke-width: 3.5; }
+.timeline-event-geometry:focus-visible { stroke: var(--tm-blue); stroke-width: 4; stroke-dasharray: 8 4; outline: none; }
 .timeline-map-marker {
   position: absolute; width: 44px; height: 44px; transform: translate(-50%, -50%);
   display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; cursor: pointer;

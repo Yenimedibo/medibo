@@ -200,6 +200,15 @@ export default function TimelineMap() {
     setTopic('');
     setPeriod('');
   };
+  const selectMappedEvent = (id: string) => {
+    setSelectedId(id);
+    window.requestAnimationFrame(() => {
+      document.getElementById(`event-${id}`)?.scrollIntoView({
+        block: 'nearest',
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      });
+    });
+  };
   const toggleLayer = (id: string) => {
     setSelectedLayerIds((current) => {
       const next = new Set(current ?? response?.selectedLayerIds ?? []);
@@ -212,7 +221,7 @@ export default function TimelineMap() {
   };
   const mapTransform = `translate(${mapView.x} ${mapView.y}) translate(450 220) scale(${mapView.zoom}) translate(-450 -220)`;
   const startMapDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if ((event.target as Element).closest('.timeline-map-controls, .timeline-map-marker')) return;
+    if ((event.target as Element).closest('.timeline-map-controls, .timeline-map-marker, .timeline-event-geometry')) return;
     if (event.button !== 0) return;
     dragRef.current = { id: event.pointerId, x: event.clientX, y: event.clientY, originX: mapView.x, originY: mapView.y };
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -284,7 +293,7 @@ export default function TimelineMap() {
               onPointerCancel={endMapDrag}
               data-testid="map-timeline"
             >
-              <svg className="timeline-map-svg" viewBox="0 0 900 440" role="img" aria-labelledby="map-title map-description">
+              <svg className="timeline-map-svg" viewBox="0 0 900 440" role="group" aria-labelledby="map-title map-description">
                 <title id="map-title">World map of verified historical locations</title>
                 <desc id="map-description">Only records with verified location precision and valid geographic information are shown here. Other records remain in the chronology.</desc>
                 <rect x="0" y="0" width="900" height="440" className="timeline-map-ground" />
@@ -292,7 +301,23 @@ export default function TimelineMap() {
                   {[0, 1, 2, 3, 4].map((line) => <path key={`lat-${line}`} className="timeline-graticule" d={`M0 ${70 + line * 75} H900`} />)}
                   {world.map((feature, index) => <path key={index} className="timeline-land" d={path(feature as never) ?? ''} />)}
                   {mapEvents.map(({ event, geometry }) => geometry.type === 'Point' ? null : (
-                    <path key={`geometry-${event.id}`} className="timeline-event-geometry" d={path(geometry as never) ?? ''} />
+                    <path
+                       key={`geometry-${event.id}`}
+                       className={`timeline-event-geometry${selectedId === event.id ? ' is-selected' : ''}`}
+                       d={path(geometry as never) ?? ''}
+                       role="button"
+                       tabIndex={0}
+                       aria-label={`Open details for mapped feature: ${event.title}, ${yearLabel(event)}`}
+                       aria-pressed={selectedId === event.id}
+                       onClick={() => selectMappedEvent(event.id)}
+                       onKeyDown={(e) => {
+                         if (e.key === 'Enter' || e.key === ' ') {
+                           e.preventDefault();
+                           selectMappedEvent(event.id);
+                         }
+                       }}
+                       data-testid={`shape-event-${event.id}`}
+                     />
                   ))}
                 </g>
               </svg>
@@ -305,7 +330,7 @@ export default function TimelineMap() {
                     style={{ left: `${point[0] / 9}%`, top: `${point[1] / 4.4}%` }}
                     aria-label={`Select mapped event: ${event.title}, ${yearLabel(event)}`}
                     aria-pressed={selectedId === event.id}
-                    onClick={() => setSelectedId(event.id)}
+                    onClick={() => selectMappedEvent(event.id)}
                     data-testid={`marker-event-${event.id}`}
                   ><span /></button>
                 ))}
@@ -405,7 +430,7 @@ export default function TimelineMap() {
               </select>
             </label>
             <button className="timeline-reset" type="button" onClick={resetFilters} data-testid="button-reset-timeline-filters">Reset filters</button>
-            <p className="timeline-filter-note">Filters remain available when the record is empty. A missing location is never inferred from a region label.</p>
+            <p className="timeline-filter-note">When no researched historical period is assigned, records are grouped by century. Century groupings are chronological, not claims of shared political or cultural systems. A missing location is never inferred from a region label.</p>
           </aside>
         </section>
 
