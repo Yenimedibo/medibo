@@ -1,6 +1,6 @@
 # The Timeline Map and project access — review handoff
 
-Code commit: `e2cc114fdfefe3f74748b2d57bcc4421c7aaf972`
+Code commit: `2b9f567df7cf264972da812b5d43c72702b1046b`
 
 Branch: `feature/timeline-map-auth`
 
@@ -21,6 +21,7 @@ Draft PR: https://github.com/Yenimedibo/medibo/pull/5
 
 - VERIFIED — Added a mobile-first interactive map using bundled Natural Earth 110m geography, d3-geo projection and no external map tiles. It supports pan/zoom, year range 500–2026, region/event type/period filters, linked records, details, source links, confidence/verification labels, and list-only incomplete geography.
 - VERIFIED — Added server-driven visitor layer definitions and independent accessible switches for Historical Events (default on), Climate & Natural Disasters (default off), and Trade Routes & Resources (default off). Layer choices filter the map and chronology together and can all be off; the control list is generated from the sheet response so approved future categories do not require a UI rebuild. Blank defaults fall back to the requested defaults; unknown categories default off.
+- VERIFIED — Updated the adapter to the owner-supplied actual `Map Layers` schema. It reads `Layer ID`, `Visitor Label`, `Default Visible`, `Order`, and `Layer Status`, preserves prior compatible aliases, requires `Active` status for public layer controls, and fails closed for `Hidden`, `Retired`, missing, or unknown statuses. Retired layers/events are excluded from editor preview too; hidden items can be examined only in editor preview. Research / Map Notes and other internal descriptive columns are not returned.
 - VERIFIED — The adapter reads the new `Map Events` fields in AI–AK as Map Layer ID, Layer Subtype, and Linked Map Feature ID. Layer subtype and linked feature metadata are retained with records; source-supported geometry gates remain unchanged.
 - VERIFIED — The basemap is labeled as modern reference outlines, not historical borders. Only date-valid records with verified coordinates or verified geometry can create map features; disputed polygons, invalid coordinates, and undated records do not get markers.
 - VERIFIED — Extended the bounded read-only reader to `Map Events` (`A1:AK2500`) and `Map Layers` (`A1:Z200`), retaining `Master Timeline` (`A4:D1531`), `Sources` (`A1:D200`), and `Methodology` (`A1:B100`). It keeps the read-only Sheets scope, 60-second cache, server-side editor allowlist, and truthful disconnected/error/empty responses.
@@ -42,7 +43,7 @@ Draft PR: https://github.com/Yenimedibo/medibo/pull/5
 
 ## 4. Risks or uncertainties
 
-- UNKNOWN — No actual Sheets connection was made. The current code expects common layer ID/name/default headers and accepts aliases; confirm the actual `Map Layers` column labels, approval semantics, and bounded ranges against the workbook when service-account access returns. Configure `GOOGLE_SERVICE_ACCOUNT_JSON` through Replit Secrets using a read-only service account, share the workbook as Viewer, and set `MEDIBO_EDITOR_USER_IDS` through Replit Secrets for authorized Clerk user IDs. Never paste credentials into chat or repository files.
+- UNKNOWN — No actual Sheets connection was made. The current parser is implemented against the owner-supplied actual `Map Layers` headers, but a live read is still needed to confirm synchronization and range coverage. Configure `GOOGLE_SERVICE_ACCOUNT_JSON` through Replit Secrets using a read-only service account, share the workbook as Viewer, and set `MEDIBO_EDITOR_USER_IDS` through Replit Secrets for authorized Clerk user IDs. Never paste credentials into chat or repository files.
 - UNKNOWN — The workbook may exceed the bounded ranges `Map Events A1:AK2500`, `Map Layers A1:Z200`, `Master Timeline A4:D1531`, `Sources A1:D200`, or `Methodology A1:B100`. Confirm bounds before relying on complete coverage.
 - VERIFIED — The documented Map Events schema has no dedicated historical-period column; records remain `Unclassified` rather than using `Record Type` as an unverified substitute.
 - UNKNOWN — No successful sign-in, account creation, Google provider callback, persistent session, or post-login browser session was exercised. The visible Google/email choices are the Clerk UI, not evidence that provider settings are complete. Enable/configure Google in the managed Clerk settings before claiming it works.
@@ -53,11 +54,11 @@ Draft PR: https://github.com/Yenimedibo/medibo/pull/5
 
 ## 5. Validation performed
 
-- VERIFIED — At code commit `e2cc114fdfefe3f74748b2d57bcc4421c7aaf972`, `pnpm typecheck`, `pnpm build`, `pnpm test:contracts` (**28 passed, 0 failed**) and `git diff --check` passed. The Vite build transformed 143 modules.
-- VERIFIED — The Timeline Map test suite covers the bounded sheet ranges, AI–AK source mapping, exact approval and geography rules, editor-only draft layers/records, source-ID resolution and unsafe URLs, filters across selected layers, changed defaults, all-off behavior, dynamic future categories, missing credentials, geometry validation and remote-geometry non-fetch.
-- VERIFIED — Fresh isolated Chromium testing used only synthetic API fixtures and a temporary local component harness: the three defaults rendered as `true/false/false`; independent and combined selections updated map markers and chronology together; Space toggled a focused switch without losing focus; all switches off produced zero visible records and markers; a 390px viewport had 390px document width with no horizontal overflow.
+- VERIFIED — At code commit `2b9f567df7cf264972da812b5d43c72702b1046b`, `pnpm typecheck`, `pnpm build`, `pnpm test:contracts` (**28 passed, 0 failed**) and `git diff --check` passed. The Vite build transformed 143 modules.
+- VERIFIED — The Timeline Map test suite covers the actual nine-column Map Layers header, Visitor Label/default/order mapping, strict Layer Status behavior including retired-layer exclusion in editor preview, draft event visibility, AI–AK source mapping, exact approval and geography rules, source-ID resolution and unsafe URLs, filters across selected layers, all-off behavior, future categories and event assignment, missing credentials, geometry validation, and remote-geometry non-fetch.
+- VERIFIED — Fresh isolated Chromium testing at the previous UI code commit `e2cc114fdfefe3f74748b2d57bcc4421c7aaf972` used only synthetic API fixtures and a temporary local component harness: the three defaults rendered as `true/false/false`; independent and combined selections updated map markers and chronology together; Space toggled a focused switch without losing focus; all switches off produced zero visible records and markers; a 390px viewport had 390px document width with no horizontal overflow. No new browser test was needed for this server-schema-only correction.
 - VERIFIED — A fresh isolated HTTP/browser smoke confirmed Home returns 200 and renders the personal Home shell; `/timeline-map` redirects to sign-in with `returnTo=/timeline-map`; the signed-out map API returns 401; Workbench redirects to sign-in; Privacy handoff and public account-help routes behave as expected. The sign-in DOM displayed Google/email options and the noindex metadata.
-- UNKNOWN — The layer browser check did not authenticate, read real user/browser storage, inspect private records, or contact Google Sheets. The earlier sign-in smoke cited above belongs to the prior code commit and is not a newly repeated authentication check. No production redirect was followed.
+- UNKNOWN — Browser checks did not authenticate, read real user/browser storage, inspect private records, or contact Google Sheets. The earlier sign-in smoke cited above belongs to the prior code commit and is not a newly repeated authentication check. No production redirect was followed.
 
 ## 6. Recommended next reviewer / stop
 

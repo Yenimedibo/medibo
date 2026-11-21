@@ -1,3 +1,19 @@
+# 2026-11-21 — Excluded retired timeline layers
+
+- VERIFIED — Code commit `2b9f567df7cf264972da812b5d43c72702b1046b` on `feature/timeline-map-auth` excludes `Retired` layers and their events from both public mode and editor preview. Public mode still admits only `Active` layers; hidden layers may be available only in editor preview.
+- VERIFIED — Missing or unrecognized `Layer Status` remains fail-closed for visitor access. Active layers still require the existing per-event approval checks. The actual schema's research notes and other internal layer fields are not returned to visitors.
+- VERIFIED — Fresh `pnpm typecheck`, `pnpm build`, and full `pnpm test:contracts` passed (**28 tests, 0 failed**).
+- UNKNOWN — Google Sheets synchronization and authorized Clerk login were not tested. No merge, deployment, or production change occurred.
+
+# 2026-11-21 — Matched layer parsing to the actual workbook schema
+
+- VERIFIED — Code commit `7374f9601e258db4f8408a964bd59531dd458e19` on `feature/timeline-map-auth` now reads the owner-supplied `Map Layers` headers: `Layer ID`, `Visitor Label`, `Default Visible`, `Order`, and `Layer Status`, while retaining supported aliases.
+- VERIFIED — Public layers require `Layer Status = Active`; `Hidden`, `Retired`, missing, and unrecognized statuses fail closed. Event-level publication checks remain required. Research notes, included topics, supported geography, and publication-rule text are not returned in public layer data.
+- VERIFIED — Synthetic tests now use the actual nine-column sheet header, confirm labels and defaults, exclude inactive/unrecognized layers and their events, verify active future categories/events, preserve legacy aliases, and cover independent, combined, and all-off selection.
+- VERIFIED — Fresh `pnpm typecheck`, `pnpm build`, and the full `pnpm test:contracts` suite passed (**28 tests, 0 failed**).
+- UNKNOWN — No Google Sheets connection or authorized Clerk sign-in was performed. No live sync or authentication success is claimed.
+- VERIFIED — Only the existing PR #5 feature branch is in scope; no merge, deployment, production-domain change, or bourkia.com modification occurred.
+
 # 2026-11-21 — Added expandable Timeline Map layers
 
 - VERIFIED — Code commit `e2cc114fdfefe3f74748b2d57bcc4421c7aaf972` on `feature/timeline-map-auth` adds the expandable layer controls to draft PR #5. The separate CI PR, other branches, and production were not changed.
