@@ -1,3 +1,12 @@
+# 2026-11-21 — Added expandable Timeline Map layers
+
+- VERIFIED — Code commit `e2cc114fdfefe3f74748b2d57bcc4421c7aaf972` on `feature/timeline-map-auth` adds the expandable layer controls to draft PR #5. The separate CI PR, other branches, and production were not changed.
+- VERIFIED — Added a server-side read-only `Map Layers` range and extended `Map Events` through column AK for Map Layer ID, Layer Subtype, and Linked Map Feature ID. Definitions and defaults are read from the layer tab; the three requested defaults are used only if their sheet default is blank, and unknown categories default off.
+- VERIFIED — Dynamic accessible switches apply the same layer selection to map features, chronology, and filter choices. Synthetic checks cover independent and combined selections, all-off, date/region/type filtering, rejected or draft layer visibility, sheet-default overrides, source-approved shapes, and future categories.
+- VERIFIED — Fresh `pnpm typecheck`, `pnpm build`, and `pnpm test:contracts` passed (**28 tests, 0 failed**). A fresh isolated Chromium run with synthetic API fixtures confirmed initial switches, independent/combined toggles, Space-key operation with focus retained, all-off empty map/list, and no horizontal overflow at 390px.
+- UNKNOWN — No live Google Sheets connection or actual workbook schema check was performed. The preview still needs the owner-configured `GOOGLE_SERVICE_ACCOUNT_JSON`, Viewer sharing for the service account, and confirmation of the Map Layers header names/ranges. Real Clerk authentication remains untested with authorized accounts.
+- VERIFIED — No historical records, coordinates, routes, or resources were fabricated. No merge, publish, deployment, access/domain/DNS change, or bourkia.com modification occurred; no production deployment is recommended.
+
 # 2026-11-21 — Corrected Timeline Map spreadsheet integration
 
 - VERIFIED — Code commit `f94e00c76e222727cd582b5e87a2e4982139efd3` replaces the prior broad-alias adapter/tests on `feature/timeline-map-auth`. Draft PR #5 remains the target; no merge, deploy, publish, DNS/domain/access change, or production edit occurred.
