@@ -51,6 +51,7 @@ p { margin: 0 0 1em; }
 .nav { display: none; width: 100%; flex-direction: column; padding: 1rem 0 .5rem; }
 .nav.is-open { display: flex; }
 .nav__link { font-family: var(--sans); font-size: 1rem; text-decoration: none; padding: .7rem 0; border-top: 1px solid var(--rule); display: flex; gap: .9rem; align-items: baseline; color: var(--ink-2); }
+.nav__account { background: transparent; border: 0; text-align: left; cursor: pointer; }
 .nav__link[aria-current='page'] { color: var(--ink); }
 .nav__link[aria-current='page'] .nav__num { color: var(--oxide); }
 .nav__num { font-family: var(--mono); font-size: .7rem; color: var(--ink-3); }

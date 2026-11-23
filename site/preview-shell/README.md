@@ -2,7 +2,7 @@
 
 VERIFIED — Newly authored preview implementation, not a recovered original source export. Production remains https://bourkia.com. Do not deploy this package as a production replacement.
 
-## Run without Replit
+## Run the staging package
 
 Node.js 22.12 or later and pnpm 10:
 
@@ -13,17 +13,35 @@ pnpm build
 pnpm start
 ```
 
-The standalone preview defaults to port 4173; set `PORT` to override. For development use `pnpm dev`. No account, database, API key, Replit SDK or platform environment variable is required.
+The standalone preview defaults to port 4173; set `PORT` to override. For development use `pnpm dev`. Clerk's `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and `VITE_CLERK_PUBLISHABLE_KEY` are provisioned through Replit's managed authentication setup. The client starts Clerk only when `VITE_CLERK_PUBLISHABLE_KEY` is configured. Without it, the public homepage, privacy, and account-help pages still render; protected projects show an unavailable/locked state, and protected server routes and APIs fail closed. Do not put these values in the repository.
+
+## Google Sheets setup
+
+- `GOOGLE_SERVICE_ACCOUNT_JSON` is the only spreadsheet credential expected by the server. Configure it through Replit Secrets; never commit it, return it from an API, or put it in browser code.
+- The service account uses the Google Sheets `spreadsheets.readonly` scope. Share the specified workbook with its service-account email as a Viewer. The adapter reads bounded ranges from `Map Events` (`A1:AK2500`), `Map Layers` (`A1:Z200`), `Master Timeline` (`A4:D1531`), `Sources` (`A1:D200`), and `Methodology` (`A1:B100`). The Map Layers headers below were supplied for this correction; this Replit session did not independently connect to or read the workbook, so live sync and range coverage remain unverified.
+- `MEDIBO_EDITOR_USER_IDS` is a comma-separated Replit Secret allowlist of Clerk user IDs. It is empty by default, so no editor receives draft preview until the owner configures it.
+- `Map Layers` uses `Layer ID`, `Visitor Label`, `Default Visible`, `Order`, `Included Topics`, `Supported Geography`, `Publication Rule`, `Research / Map Notes`, and `Layer Status`. `Active` layers are available to visitors subject to the event publication checks below. `Hidden`, `Retired`, missing, and unrecognized statuses are excluded from public controls and records; `Retired` layers and records are also excluded from editor preview, while `Hidden` items may be seen there. Existing ID/name/default/order aliases remain supported. The actual schema's research/map notes, included topics, supported geography, and publication-rule text are not copied into public layer responses.
+- Defaults are read from the sheet: Historical Events is on, while Climate & Natural Disasters and Trade Routes & Resources are off. If a default is blank, those three IDs use those requested defaults; new categories default off. The control list is generated from active sheet definitions, not hard-coded.
+- `Map Events` additions in columns AI–AK are read as `Map Layer ID`, `Layer Subtype`, and `Linked Map Feature ID`. A record must refer to a visible/available layer definition to be returned. The layer switches filter the map and chronology together and can all be off; year, region, event type, and period filters continue to apply.
+- Public events require `Evidence Status = Fully checked`, `Review Status = Reviewed`, `Publication Status = Approved`, and `Public Event Ready = YES`, as well as valid date/title/description/source data. Only references used by an eligible event are returned from the Sources tab.
+- A map feature additionally requires `Map Feature Ready = YES`, `Map Placement Status = Ready`, `Location Accuracy = Exact`, a valid date, and valid coordinates or inline GeoJSON. Geometry IDs/URLs are never fetched. Missing or approximate geography stays in the chronology without a marker.
+- The documented `Map Events` headers do not contain a historical-period column. The adapter leaves that field as `Unclassified` rather than treating `Record Type` or another unrelated field as a period; provide an owner-approved mapping/schema change before displaying populated historical-period filter choices.
+- The annual `Master Timeline` and `Methodology` tabs do not document row-level public approval fields, so their content is editor-preview only. The server keeps a private in-memory cache for at most 60 seconds. Client refresh is every 60 seconds. Missing credentials produce a disconnected state; access errors produce a separate error state.
+- Do not use a Google Sheets OAuth token or service-account JSON in client code, browser storage, logs, test fixtures or commits. Keep test records synthetic.
+
+Google and email/password options were visible in the Replit-managed Development sign-in UI during browser checks. Provider configuration remains an owner-managed Clerk setting; no successful authentication was performed. Phone OTP is not included. Account creation is free within this staging experience; no billing or payment code is present.
 
 ## Boundary
 
-- VERIFIED — `/`, `/courses` and `/reality-101` are shell pages. Workbench and Privacy are live-origin handoffs, not explanatory replacement pages.
-- VERIFIED — The course card opens the existing `https://bourkia.com/talk-to-ai`. The existing course path/subtree and media paths receive read-only 307 handoffs, never a SPA fallback. All 45 observed download requested/final paths are covered by this subtree rule. Browser fragments are not supplied to HTTP; handoffs omit a new fragment so the browser retains the incoming one.
-- VERIFIED — Workbench and Privacy use native absolute links throughout navigation/Home/footer. Direct `/workbench` and `/privacy` requests (including trailing slash) receive 307 handoffs with query preserved; client-router fallback uses the same live destination with query/hash preserved. Production documents are not fetched or proxied by this package. Preview-origin storage is never read, written, cleared, exported, imported or synchronized.
+- VERIFIED — `/` remains public. `/courses`, `/timeline-map`, their API, and the staging Workbench handoff require a Clerk session in the package server. `/privacy` and `/account-help` remain public.
+- VERIFIED — The course entry and Reality 101 routes serve only the noindex app shell so the browser can retain legacy fragments; the real Clerk UI gates the normal staging flow before their client content/redirect. Approved course `#en/...`/`#dar/...` routes and Reality `#episode-1`/`#episode-2` survive sign-in. The original course and episodes remain independently public on bourkia.com, so this staging gate does not restrict direct production links. All 45 observed download paths/final aliases remain direct read-only 307 handoffs; none is gated or copied.
+- VERIFIED — Workbench links in the staging shell require sign-in before the fixed-origin live handoff; a signed-in direct staging request still receives the original 307 handoff. Privacy remains a public fixed-origin handoff. Production documents are not fetched or proxied by this package. Preview-origin storage is never read, written, cleared, exported, imported or synchronized.
+- VERIFIED — Clerk sessions are validated server-side for protected page requests and Timeline Map API requests. The browser uses Clerk's session cookies; no bearer token or local user database was added. Auth-provider telemetry is disabled.
+- VERIFIED — The Timeline Map uses bundled Natural Earth 110m geography without tile requests. It requires a date and explicitly verified coordinates or geometry for a map feature; uncertain or incomplete records remain chronological only. Server filtering excludes draft, pending, private, disputed-review, and rejected records from visitor mode. Editor preview is withheld unless the server-side Clerk ID allowlist permits it.
 - VERIFIED — Malformed URL targets return 400 without falling through. Vite development/built-preview guards run before Connect's request-target parser; the standalone server uses the same handoff middleware.
 - VERIFIED — Existing course/Workbench implementation, languages, RTL, storage and download payloads are not copied or altered. They remain external production dependencies. No server proxy sees their payloads.
 - VERIFIED — Existing episode video/poster URLs are used directly, with native playback controls and no autoplay.
-- VERIFIED — HTML robots metadata, robots.txt and the standalone server's X-Robots-Tag mark this preview noindex/nofollow. This is not access control. Do not use it to store private data.
+- VERIFIED — HTML robots metadata, robots.txt and the server's X-Robots-Tag mark this preview noindex/nofollow. Noindex is not access control.
 - UNKNOWN — Full portable parity and offline independence are not achieved. Course, Workbench, privacy text and media depend on the live production origin. Hosting provider request logging is outside this frontend.
 - VERIFIED — This package is INELIGIBLE for production-origin cutover: fixed-origin handoffs would redirect to themselves there, and the original feature implementations are absent. No production/indexable mode or self-origin deployment guard is introduced. Noindex remains mandatory but is not access control or a deployment safeguard.
 - VERIFIED — Route-specific titles/descriptions/OG are set after JavaScript runs. Static per-page/pre-rendered metadata and a canonical remain absent.
@@ -36,4 +54,4 @@ pnpm build
 pnpm test:contracts
 ```
 
-The contract unit tests use observed URL metadata only, not private browser records or payloads. Run the built preview using `pnpm start`; a static host must reproduce the compatibility handoffs and SPA page fallback. Do not upload `dist/` blindly to a host that would shadow the course subtree.
+The contract and map-data tests use observed URL metadata and synthetic rows only, not private browser records or spreadsheet values. `pnpm start` serves the server-backed staging package. A static-only host does not provide its required auth and spreadsheet API, so this package is not eligible for production cutover. Do not upload `dist/` blindly to a host that would shadow the course subtree.
